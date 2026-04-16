@@ -3,75 +3,58 @@
  * -------------------------------------------------------------------
  * The core calculation engine.
  *
- * Input parameters (isInput=true) are user-provided values seeded
- * directly into the scope. Formula parameters are evaluated in
- * topological order using mathjs.evaluate.
+ * Given a list of parameters (with key & formula) and a map of
+ * user-supplied input values, this engine:
+ *
+ *   1. Topologically sorts parameters by dependency
+ *   2. Builds a scope object seeded with inputs
+ *   3. Evaluates each formula in order using mathjs.evaluate
+ *   4. Returns the full scope (inputs + all calculated values)
  *
  * IMPORTANT: Uses mathjs.evaluate — NOT eval().
  * -------------------------------------------------------------------
  */
 
 const { create, all } = require('mathjs');
-const { topologicalSort } = require('./dependencyResolver');
+const { topologicalSort, collectAllInputVariables } = require('./dependencyResolver');
 
+// Create a mathjs instance with all functions available
 const math = create(all);
 
 /**
  * Run the formula engine.
  *
- * @param {Array} parameters  All parameters for the category.
- *   Each has: { key, formula, name, isInput }
+ * @param {Array<{key:string, formula:string, name:string}>} parameters
+ *   All parameters belonging to the selected category.
  *
  * @param {Object} inputs
- *   User-supplied values keyed by parameter.key or raw variable name.
- *   e.g. { length: 10, width: 5, density: 2.5, rate: 150 }
- *   Must include values for ALL isInput parameters AND any raw formula variables.
+ *   User-supplied values, e.g. { length: 10, width: 5, rate: 200 }
  *
  * @returns {{ scope: Object, order: string[] }}
+ *   scope  — full scope object with all inputs + calculated values
+ *   order  — parameter keys in evaluation order (for debugging)
+ *
+ * @throws Error if formula is invalid, input is missing, or circular dep found
  */
 async function runEngine(parameters, inputs) {
   if (!parameters || parameters.length === 0) {
     return { scope: { ...inputs }, order: [] };
   }
 
-  // ── Step 1: Separate input params from formula params ─────────────────────
-  const inputParams = parameters.filter((p) => p.isInput);
-  const formulaParams = parameters.filter((p) => !p.isInput);
+  // ── Step 1: Topological sort ────────────────────────────────────────────────
+  const sortedParams = topologicalSort(parameters);
 
-  // ── Step 2: Validate that all required values are provided ────────────────
-  const missingInputs = [];
-
-  // Check user-provided (isInput=true) parameter values
-  for (const p of inputParams) {
-    if (inputs[p.key] === undefined || inputs[p.key] === null || inputs[p.key] === '') {
-      missingInputs.push(`"${p.name}" (${p.key})`);
-    }
-  }
-
-  // Check raw formula variables (auto-extracted, not any parameter key)
-  const allParamKeys = new Set(parameters.map((p) => p.key));
-  const { extractVariables } = require('./dependencyResolver');
-  for (const p of formulaParams) {
-    if (p.formula) {
-      const vars = extractVariables(p.formula);
-      for (const v of vars) {
-        if (!allParamKeys.has(v) && (inputs[v] === undefined || inputs[v] === null || inputs[v] === '')) {
-          missingInputs.push(`"${v}"`);
-        }
-      }
-    }
-  }
-
+  // ── Step 2: Check for missing inputs ───────────────────────────────────────
+  const requiredInputs = collectAllInputVariables(parameters);
+  const missingInputs = requiredInputs.filter(
+    (v) => inputs[v] === undefined || inputs[v] === null || inputs[v] === ''
+  );
   if (missingInputs.length > 0) {
-    // Deduplicate
-    const unique = [...new Set(missingInputs)];
-    throw new Error(`Missing required input values: ${unique.join(', ')}`);
+    throw new Error(`Missing required input values: ${missingInputs.join(', ')}`);
   }
 
-  // ── Step 3: Build scope — start with all user inputs ─────────────────────
+  // ── Step 3: Build scope with validated numeric inputs ──────────────────────
   const scope = {};
-
-  // Seed raw inputs (existing user values) as numbers
   for (const [key, value] of Object.entries(inputs)) {
     const numVal = Number(value);
     if (isNaN(numVal)) {
@@ -80,39 +63,26 @@ async function runEngine(parameters, inputs) {
     scope[key] = numVal;
   }
 
-  // Input parameters are already in scope via the inputs object above.
-  // Just make sure each isInput param's key is in scope.
-  for (const p of inputParams) {
-    if (scope[p.key] === undefined) {
-      throw new Error(`Input parameter "${p.name}" (${p.key}) was not provided`);
-    }
-  }
-
-  // ── Step 4: Topological sort formula params ───────────────────────────────
+  // ── Step 4: Evaluate parameters in topological order ──────────────────────
   const order = [];
+  for (const param of sortedParams) {
+    try {
+      const result = math.evaluate(param.formula, scope);
 
-  if (formulaParams.length > 0) {
-    const sortedParams = topologicalSort(formulaParams);
-
-    // ── Step 5: Evaluate formulas in order ───────────────────────────────────
-    for (const param of sortedParams) {
-      try {
-        const result = math.evaluate(param.formula, scope);
-
-        if (typeof result === 'object' && result !== null && result.toNumber) {
-          scope[param.key] = result.toNumber();
-        } else if (typeof result !== 'number') {
-          throw new Error(`Formula "${param.formula}" did not evaluate to a number`);
-        } else {
-          scope[param.key] = result;
-        }
-
-        order.push(param.key);
-      } catch (err) {
-        throw new Error(
-          `Error evaluating "${param.name}" (${param.key} = ${param.formula}): ${err.message}`
-        );
+      // Ensure result is a plain number (not a mathjs Unit or Complex)
+      if (typeof result === 'object' && result !== null && result.toNumber) {
+        scope[param.key] = result.toNumber();
+      } else if (typeof result !== 'number') {
+        throw new Error(`Formula "${param.formula}" did not evaluate to a number`);
+      } else {
+        scope[param.key] = result;
       }
+
+      order.push(param.key);
+    } catch (err) {
+      throw new Error(
+        `Error evaluating parameter "${param.name}" (key: "${param.key}"): ${err.message}`
+      );
     }
   }
 
@@ -121,6 +91,9 @@ async function runEngine(parameters, inputs) {
 
 /**
  * Validate a formula string without evaluating it.
+ * Returns { valid: true } or { valid: false, error: string }
+ *
+ * @param {string} formula
  */
 function validateFormula(formula) {
   try {

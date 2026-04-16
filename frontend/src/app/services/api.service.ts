@@ -51,20 +51,18 @@ export class ApiService {
     if (categoryId) params = params.set('categoryId', categoryId);
     return this.http.get<Parameter[]>(`${BASE}/parameter`, { params });
   }
-  createParameter(data: Partial<Parameter> & { isInput?: boolean }): Observable<Parameter> {
+  createParameter(data: Partial<Parameter>): Observable<Parameter> {
     return this.http.post<Parameter>(`${BASE}/parameter`, data);
   }
-  updateParameter(id: string, data: Partial<Parameter> & { isInput?: boolean }): Observable<Parameter> {
+  updateParameter(id: string, data: Partial<Parameter>): Observable<Parameter> {
     return this.http.put<Parameter>(`${BASE}/parameter/${id}`, data);
   }
   deleteParameter(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${BASE}/parameter/${id}`);
   }
-  validateFormula(formula: string, categoryId?: string, currentKey?: string): Observable<FormulaValidationResult> {
+  validateFormula(formula: string): Observable<FormulaValidationResult> {
     return this.http.post<FormulaValidationResult>(`${BASE}/parameter/validate-formula`, {
       formula,
-      ...(categoryId ? { categoryId } : {}),
-      ...(currentKey ? { currentKey } : {}),
     });
   }
   getInputVariables(categoryId: string): Observable<InputVariablesResult> {

@@ -11,8 +11,8 @@ exports.create = async (req, res, next) => {
       return res.status(400).json({ message: 'name, categoryId, and inputs are required' });
     }
 
-    // Load ALL parameters for this category (both input and formula types)
-    const parameters = await Parameter.find({ categoryId }).select('key formula name isInput');
+    // Load parameters for this category
+    const parameters = await Parameter.find({ categoryId }).select('key formula name');
 
     if (parameters.length === 0) {
       return res.status(400).json({
@@ -20,20 +20,33 @@ exports.create = async (req, res, next) => {
       });
     }
 
-    // Run formula engine
+    // Run formula engine — returns { scope, order }
     const { scope, order } = await runEngine(parameters, inputs);
 
-    // Build "calculated" object — only the formula-evaluated parameters
+    // Separate calculated values from inputs
+    const inputKeys = Object.keys(inputs);
     const calculated = {};
     for (const key of order) {
       calculated[key] = scope[key];
     }
 
-    const product = await Product.create({ name, categoryId, inputs, calculated });
+    const product = await Product.create({
+      name,
+      categoryId,
+      inputs,
+      calculated,
+    });
+
     await product.populate('categoryId', 'name');
 
-    res.status(201).json({ product, scope, evaluationOrder: order });
+    res.status(201).json({
+      product,
+      scope,
+      evaluationOrder: order,
+    });
   } catch (err) {
+    // Formula engine errors (circular dep, missing input, invalid formula)
+    // are plain Errors — send as 400
     if (
       err.message.includes('Circular dependency') ||
       err.message.includes('Missing required input') ||

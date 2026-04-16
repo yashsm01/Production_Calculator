@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
-import { Parameter, Category, Unit, FormulaValidationResult } from '../../models/interfaces';
+import { Parameter, Category, Unit } from '../../models/interfaces';
 
 @Component({
   selector: 'app-parameter',
@@ -27,23 +27,17 @@ export class ParameterComponent implements OnInit {
   form = {
     name: '',
     key: '',
-    isInput: false,
     formula: '',
-    unitId: '',     // unit for the output of this parameter
+    unitId: '',
     categoryId: '',
-    /** Maps raw variable name → unit _id (empty string = no unit) */
-    variableUnits: {} as Record<string, string>,
   };
   editId = '';
 
-  // Formula validation + classified variables
+  // Live formula validation state
   formulaValid: boolean | null = null;
   formulaError = '';
+  extractedVars: string[] = [];
   validatingFormula = false;
-  inputParamVars: string[] = [];
-  formulaParamVars: string[] = [];
-  unknownVars: string[] = [];
-  allVars: string[] = [];
 
   private formulaInput$ = new Subject<string>();
 
@@ -58,62 +52,47 @@ export class ParameterComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.api.getParameters().subscribe({
-      next: (d) => { this.parameters = d; this.loading = false; },
-      error: (e) => { this.error = e.error?.message || 'Failed to load'; this.loading = false; },
+      next: (data) => {
+        this.parameters = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.error?.message || 'Failed to load parameters';
+        this.loading = false;
+      },
     });
   }
 
   loadMeta(): void {
-    this.api.getCategories().subscribe((c) => (this.categories = c));
-    this.api.getUnits().subscribe((u) => (this.units = u));
+    this.api.getCategories().subscribe((cats) => (this.categories = cats));
+    this.api.getUnits().subscribe((units) => (this.units = units));
   }
 
   setupFormulaValidation(): void {
     this.formulaInput$
       .pipe(
-        debounceTime(450),
+        debounceTime(400),
         distinctUntilChanged(),
         switchMap((formula) => {
           this.validatingFormula = true;
           this.formulaValid = null;
-          this.clearVars();
-          return this.api.validateFormula(
-            formula,
-            this.form.categoryId || undefined,
-            this.editMode ? this.form.key : undefined,
-          );
+          this.extractedVars = [];
+          return this.api.validateFormula(formula);
         })
       )
       .subscribe({
-        next: (r: FormulaValidationResult) => {
-          this.formulaValid = r.valid;
-          this.formulaError = r.error || '';
-          this.allVars         = r.variables       || [];
-          this.inputParamVars  = r.inputParamVars  || [];
-          this.formulaParamVars = r.formulaParamVars || [];
-          this.unknownVars     = r.unknownVars     || this.allVars;
+        next: (result) => {
+          this.formulaValid = result.valid;
+          this.formulaError = result.error || '';
+          this.extractedVars = result.variables || [];
           this.validatingFormula = false;
-
-          // Sync variableUnits: keep entries only for current unknownVars
-          const updated: Record<string, string> = {};
-          for (const v of this.unknownVars) {
-            updated[v] = this.form.variableUnits[v] || '';
-          }
-          this.form.variableUnits = updated;
         },
-        error: (e) => {
+        error: (err) => {
           this.formulaValid = false;
-          this.formulaError = e.error?.error || 'Validation failed';
+          this.formulaError = err.error?.error || 'Validation failed';
           this.validatingFormula = false;
         },
       });
-  }
-
-  clearVars(): void {
-    this.allVars = [];
-    this.inputParamVars = [];
-    this.formulaParamVars = [];
-    this.unknownVars = [];
   }
 
   onFormulaChange(value: string): void {
@@ -121,30 +100,17 @@ export class ParameterComponent implements OnInit {
       this.formulaInput$.next(value.trim());
     } else {
       this.formulaValid = null;
-      this.clearVars();
-      this.form.variableUnits = {};
+      this.extractedVars = [];
     }
-  }
-
-  onCategoryChange(): void {
-    if (!this.form.isInput && this.form.formula.trim()) {
-      this.formulaInput$.next(this.form.formula.trim());
-    }
-  }
-
-  onIsInputChange(): void {
-    this.formulaValid = null;
-    this.clearVars();
-    this.form.variableUnits = {};
-    if (this.form.isInput) this.form.formula = '';
   }
 
   openCreate(): void {
     this.editMode = false;
     this.editId = '';
-    this.form = { name: '', key: '', isInput: false, formula: '', unitId: '', categoryId: '', variableUnits: {} };
+    this.form = { name: '', key: '', formula: '', unitId: '', categoryId: '' };
     this.formulaValid = null;
-    this.clearVars();
+    this.extractedVars = [];
+    this.formulaError = '';
     this.error = '';
     this.success = '';
     this.formVisible = true;
@@ -153,38 +119,21 @@ export class ParameterComponent implements OnInit {
   openEdit(param: Parameter): void {
     this.editMode = true;
     this.editId = param._id;
-
-    // Reconstruct variableUnits from the populated response
-    const varUnits: Record<string, string> = {};
-    if (param._populatedVariableUnits) {
-      for (const [v, unit] of Object.entries(param._populatedVariableUnits)) {
-        varUnits[v] = unit ? (unit as any)._id || '' : '';
-      }
-    } else if ((param as any).variableUnits) {
-      // raw map from mongoose
-      const raw = (param as any).variableUnits;
-      if (raw instanceof Map) {
-        for (const [k, v] of raw.entries()) varUnits[k] = v || '';
-      } else {
-        Object.assign(varUnits, raw);
-      }
-    }
-
     this.form = {
       name: param.name,
       key: param.key,
-      isInput: param.isInput,
-      formula: param.formula || '',
+      formula: param.formula,
       unitId: (param.unit as any)?._id || '',
       categoryId: (param.categoryId as any)?._id || '',
-      variableUnits: varUnits,
     };
     this.formulaValid = null;
-    this.clearVars();
+    this.extractedVars = [];
+    this.formulaError = '';
     this.error = '';
     this.success = '';
     this.formVisible = true;
-    if (!param.isInput && param.formula) this.onFormulaChange(param.formula);
+    // Trigger validation for the existing formula
+    this.onFormulaChange(param.formula);
   }
 
   closeForm(): void {
@@ -193,44 +142,30 @@ export class ParameterComponent implements OnInit {
   }
 
   save(): void {
-    if (!this.form.name.trim() || !this.form.key.trim()) {
-      this.error = 'Name and Key are required';
+    if (!this.form.name.trim() || !this.form.key.trim() || !this.form.formula.trim()) {
+      this.error = 'Name, Key, and Formula are required';
       return;
     }
-    if (!this.form.isInput && !this.form.formula.trim()) {
-      this.error = 'Formula is required for calculated parameters';
-      return;
-    }
-    if (!this.form.isInput && this.formulaValid === false) {
-      this.error = 'Fix the formula error before saving';
+    if (this.formulaValid === false) {
+      this.error = 'Please fix the formula error before saving';
       return;
     }
     this.saving = true;
     this.error = '';
 
-    // Build variableUnits — only include entries with a non-empty unit
-    const variableUnits: Record<string, string | null> = {};
-    if (!this.form.isInput) {
-      for (const [varName, unitId] of Object.entries(this.form.variableUnits)) {
-        variableUnits[varName] = unitId || null;
-      }
-    }
-
     const payload: any = {
       name: this.form.name,
       key: this.form.key,
-      isInput: this.form.isInput,
-      formula: this.form.isInput ? '' : this.form.formula,
+      formula: this.form.formula,
       unit: this.form.unitId || null,
       categoryId: this.form.categoryId || null,
-      variableUnits,
     };
 
-    const req$ = this.editMode
+    const req = this.editMode
       ? this.api.updateParameter(this.editId, payload)
       : this.api.createParameter(payload);
 
-    req$.subscribe({
+    req.subscribe({
       next: () => {
         this.saving = false;
         this.success = this.editMode ? 'Parameter updated!' : 'Parameter created!';
@@ -238,8 +173,8 @@ export class ParameterComponent implements OnInit {
         this.load();
         setTimeout(() => (this.success = ''), 3000);
       },
-      error: (e) => {
-        this.error = e.error?.message || 'Failed to save';
+      error: (err) => {
+        this.error = err.error?.message || 'Failed to save';
         this.saving = false;
       },
     });
@@ -248,34 +183,22 @@ export class ParameterComponent implements OnInit {
   delete(id: string, name: string): void {
     if (!confirm(`Delete parameter "${name}"?`)) return;
     this.api.deleteParameter(id).subscribe({
-      next: () => { this.success = 'Deleted'; this.load(); setTimeout(() => (this.success = ''), 3000); },
-      error: (e) => (this.error = e.error?.message || 'Failed to delete'),
+      next: () => {
+        this.success = 'Parameter deleted';
+        this.load();
+        setTimeout(() => (this.success = ''), 3000);
+      },
+      error: (err) => (this.error = err.error?.message || 'Failed to delete'),
     });
   }
 
-  getCategoryName(p: Parameter): string {
-    return p.categoryId ? (p.categoryId as any).name : '—';
+  getCategoryName(param: Parameter): string {
+    if (!param.categoryId) return '—';
+    return (param.categoryId as any).name || '—';
   }
 
-  getUnitSymbol(p: Parameter): string {
-    return p.unit ? (p.unit as any).symbol || '' : '';
-  }
-
-  /** Get unit name for a given unit id from the loaded units list */
-  getUnitNameById(id: string): string {
-    if (!id) return '—';
-    const u = this.units.find(u => u._id === id);
-    return u ? `${u.name} (${u.symbol})` : id;
-  }
-
-  /** Get the display symbol for a variable unit id */
-  getVarUnitSymbol(unitId: string): string {
-    if (!unitId) return '';
-    const u = this.units.find(u => u._id === unitId);
-    return u ? u.symbol : '';
-  }
-
-  get hasClassifiedVars(): boolean {
-    return this.inputParamVars.length > 0 || this.formulaParamVars.length > 0 || this.unknownVars.length > 0;
+  getUnitSymbol(param: Parameter): string {
+    if (!param.unit) return '—';
+    return (param.unit as any).symbol || '—';
   }
 }

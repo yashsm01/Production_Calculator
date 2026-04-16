@@ -2,22 +2,27 @@
   <div class="page-header">
     <div>
       <h1>Products</h1>
-      <div class="subtitle">Fill inputs (each with its own unit), run the engine, see calculated results</div>
+      <div class="subtitle">Select a category, fill inputs, and let the engine calculate everything</div>
     </div>
   </div>
 
-  @if (success) { <div class="alert alert-success">{{ success }}</div> }
-  @if (error) { <div class="alert alert-error">⚠ {{ error }}</div> }
+  @if (success) {
+    <div class="alert alert-success">{{ success }}</div>
+  }
+  @if (error) {
+    <div class="alert alert-error">⚠ {{ error }}</div>
+  }
 
-  <div class="product-layout">
+  <!-- Main layout: calculator on left, products list on right -->
+  <div style="display:grid; grid-template-columns:420px 1fr; gap:1.5rem; align-items:start">
 
-    <!-- ── LEFT: CALCULATOR FORM ─────────────────────────────────────── -->
+    <!-- ── CALCULATOR FORM ──────────────────────────────────────────────── -->
     <div>
       <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
-          <h2 style="font-size:1rem;font-weight:600">⚙️ New Calculation</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem">
+          <h2 style="font-size:1rem; font-weight:600; color:var(--text)">⚙️ New Calculation</h2>
           @if (selectedCategoryId) {
-            <button class="btn btn-ghost" style="padding:.3rem .7rem;font-size:.78rem" (click)="reset()">Reset</button>
+            <button class="btn btn-ghost" style="padding:0.3rem 0.7rem; font-size:0.78rem" (click)="resetForm()">Reset</button>
           }
         </div>
 
@@ -25,10 +30,10 @@
         <div class="form-group">
           <label for="prod-name">Product Name</label>
           <input id="prod-name" class="form-input" [(ngModel)]="productName"
-            placeholder="e.g. Beam A, Order #1" />
+            placeholder="e.g. Beam A, Slab Type 1" />
         </div>
 
-        <!-- Category -->
+        <!-- Category Selector -->
         <div class="form-group">
           <label for="prod-cat">Category</label>
           <select id="prod-cat" class="form-input" [(ngModel)]="selectedCategoryId"
@@ -40,326 +45,199 @@
           </select>
         </div>
 
+        <!-- Loading inputs -->
         @if (loadingInputs) {
-          <div style="padding:.75rem 0;display:flex;align-items:center;gap:.5rem;color:var(--text-muted);font-size:.85rem">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+          <div class="loading-overlay" style="padding:1rem">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
             Loading parameters…
           </div>
         }
 
-        <!-- ── REJECTION INPUTS (isInput=true) ─────────────────────── -->
-        @if (!loadingInputs && inputParameters.length > 0) {
-          <div class="input-section green-section">
-            <div class="section-head green">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/></svg>
-              Rejection Inputs
-              <span class="section-count">{{ inputParameters.length }}</span>
+        <!-- Dynamic Input Fields -->
+        @if (!loadingInputs && inputVariables.length > 0) {
+          <div style="border-top:1px solid var(--border); margin:1rem 0; padding-top:1rem">
+            <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              Input Variables ({{ inputVariables.length }})
             </div>
 
-            @for (param of inputParameters; track param._id) {
-              <div class="form-group" style="margin-bottom:.75rem">
-                <label [for]="'inp-' + param.key" class="input-param-label">
-                  <span class="input-param-name">{{ param.name }}</span>
-                  <span class="param-meta">
-                    <code class="key-chip">{{ param.key }}</code>
-                    @if (getParamUnit(param)) {
-                      <span class="unit-tag green-unit">{{ getParamUnit(param) }}</span>
-                    }
-                  </span>
+            @for (varName of inputVariables; track varName) {
+              <div class="form-group">
+                <label [for]="'inp-' + varName">
+                  {{ getInputLabel(varName) }}
+                  <code style="font-family:monospace; font-size:0.7rem; color:var(--accent-2); background:var(--accent-glow); padding:0.1rem 0.35rem; border-radius:4px; margin-left:0.35rem">{{ varName }}</code>
                 </label>
-                <div class="field-with-unit">
-                  <input [id]="'inp-' + param.key" type="number" step="any"
-                    class="form-input" [(ngModel)]="inputValues[param.key]"
-                    [placeholder]="'Enter ' + param.name + (getParamUnit(param) ? ' (' + getParamUnit(param) + ')' : '')" />
-                  @if (getParamUnit(param)) {
-                    <span class="unit-suffix green-suffix">{{ getParamUnit(param) }}</span>
-                  }
-                </div>
+                <input
+                  [id]="'inp-' + varName"
+                  type="number"
+                  class="form-input"
+                  [(ngModel)]="inputValues[varName]"
+                  [placeholder]="'Enter ' + getInputLabel(varName)"
+                  step="any"
+                />
               </div>
             }
           </div>
-        }
 
-        <!-- ── FORMULA VARIABLES (raw vars with units from variableUnits) -->
-        @if (!loadingInputs && formulaVariables.length > 0) {
-          <div class="input-section amber-section" style="margin-top:.75rem">
-            <div class="section-head amber">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-              Formula Variables
-              <span class="section-count amber-count">{{ formulaVariables.length }}</span>
-            </div>
-
-            @for (fv of formulaVariables; track fv.key) {
-              <div class="form-group" style="margin-bottom:.75rem">
-                <label [for]="'fv-' + fv.key" class="input-param-label">
-                  <span class="input-param-name">{{ formatLabel(fv.key) }}</span>
-                  <span class="param-meta">
-                    <code class="key-chip">{{ fv.key }}</code>
-                    @if (getFvUnitSymbol(fv)) {
-                      <span class="unit-tag amber-unit">{{ getFvUnitSymbol(fv) }}</span>
-                    }
-                  </span>
-                </label>
-                <div class="field-with-unit">
-                  <input [id]="'fv-' + fv.key" type="number" step="any"
-                    class="form-input" [(ngModel)]="inputValues[fv.key]"
-                    [placeholder]="'Enter value' + (getFvUnitSymbol(fv) ? ' (' + getFvUnitSymbol(fv) + ')' : '')" />
-                  @if (getFvUnitSymbol(fv)) {
-                    <span class="unit-suffix amber-suffix">{{ getFvUnitSymbol(fv) }}</span>
-                  }
-                </div>
+          <!-- Dependency Chain (mini visualization) -->
+          @if (categoryParameters.length > 0) {
+            <details style="margin-bottom:1rem">
+              <summary style="font-size:0.78rem; color:var(--text-muted); cursor:pointer; user-select:none; margin-bottom:0.5rem">
+                🔗 Formula dependency chain ({{ categoryParameters.length }} parameters)
+              </summary>
+              <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.4rem">
+                @for (param of categoryParameters; track param._id) {
+                  <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.78rem">
+                    <code style="color:var(--accent-2); font-family:monospace; background:rgba(108,99,255,0.08); padding:0.15rem 0.4rem; border-radius:4px; min-width:90px">{{ param.key }}</code>
+                    <span style="color:var(--text-muted)">=</span>
+                    <code style="color:var(--text-muted); font-family:monospace">{{ param.formula }}</code>
+                  </div>
+                }
               </div>
-            }
-          </div>
-        }
+            </details>
+          }
 
-        <!-- ── FORMULA CHAIN (collapsible) ─────────────────────────── -->
-        @if (!loadingInputs && formulaParameters.length > 0) {
-          <details style="margin-top:1rem">
-            <summary class="chain-summary">
-              🔗 Calculation chain ({{ formulaParameters.length }} formula{{ formulaParameters.length > 1 ? 's' : '' }})
-            </summary>
-            <div class="chain-list">
-              @for (param of formulaParameters; track param._id) {
-                <div class="chain-row">
-                  <code class="chain-key">{{ param.key }}</code>
-                  <span class="chain-eq">=</span>
-                  <code class="chain-formula">{{ param.formula }}</code>
-                  @if (getFormulaParamUnit(param)) {
-                    <span class="unit-tag purple-unit" style="margin-left:auto;flex-shrink:0">{{ getFormulaParamUnit(param) }}</span>
-                  }
-                </div>
-              }
-            </div>
-          </details>
-        }
-
-        <!-- Run button -->
-        @if (!loadingInputs && totalInputCount > 0) {
-          <button class="btn btn-primary run-btn" (click)="submit()" [disabled]="submitting">
+          <button
+            class="btn btn-primary"
+            style="width:100%; justify-content:center; padding:0.75rem"
+            (click)="submit()"
+            [disabled]="submitting"
+          >
             @if (submitting) {
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
               Calculating…
             } @else {
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
               Run Calculation
             }
           </button>
         }
 
-        @if (!loadingInputs && selectedCategoryId && totalInputCount === 0) {
+        @if (!loadingInputs && selectedCategoryId && inputVariables.length === 0 && categoryParameters.length === 0) {
           <div class="alert alert-info" style="margin-top:1rem">
-            No parameters for this category yet. Go to <strong>Parameters</strong> to add some.
+            No parameters defined for this category. Please add parameters first.
           </div>
         }
       </div>
 
-      <!-- ── RESULT CARD ─────────────────────────────────────────────── -->
+      <!-- ── CALCULATION RESULTS ──────────────────────────────────────── -->
       @if (lastResult) {
-        <div class="card result-card" style="margin-top:1.5rem;animation:slideIn .3s ease">
-          <div class="result-header">
-            <span>📊 Results</span>
-            <span style="font-weight:700;color:var(--accent-2)">{{ lastResult.product.name }}</span>
-          </div>
-
-          @if (lastResult.evaluationOrder.length > 0) {
-            <div class="eval-order">
-              <span>Order:</span>
-              @for (key of lastResult.evaluationOrder; track key; let last = $last) {
-                <code class="order-key">{{ key }}</code>
-                @if (!last) { <span class="order-arrow">→</span> }
-              }
-            </div>
-          }
-
-          <!-- Rejection Inputs provided -->
-          <div class="result-section-label">Rejection Inputs</div>
-          <div class="result-grid">
-            @for (inp of inputParameters; track inp._id) {
-              <div class="result-tile">
-                <div class="tile-key">{{ inp.name }}</div>
-                <div class="tile-code">{{ inp.key }}</div>
-                <div class="tile-value">
-                  {{ fmt(lastResult.scope[inp.key]) }}
-                  @if (getParamUnit(inp)) {
-                    <span class="tile-unit green-unit">{{ getParamUnit(inp) }}</span>
-                  }
-                </div>
-              </div>
-            }
-            @for (fv of formulaVariables; track fv.key) {
-              <div class="result-tile amber-tile">
-                <div class="tile-key">{{ formatLabel(fv.key) }}</div>
-                <div class="tile-code">{{ fv.key }}</div>
-                <div class="tile-value">
-                  {{ fmt(lastResult.scope[fv.key]) }}
-                  @if (getFvUnitSymbol(fv)) {
-                    <span class="tile-unit amber-unit">{{ getFvUnitSymbol(fv) }}</span>
-                  }
-                </div>
-              </div>
+        <div class="card" style="margin-top:1.5rem; animation:slideIn 0.3s ease">
+          <h3 style="font-size:1rem; font-weight:600; color:var(--text); margin-bottom:0.5rem">
+            📊 Results — <span style="color:var(--accent-2)">{{ lastResult.product.name }}</span>
+          </h3>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1.25rem">
+            Evaluation order:
+            @for (key of lastResult.evaluationOrder; track key; let last = $last) {
+              <code class="formula-code" style="font-size:0.7rem; margin:0 0.2rem">{{ key }}</code>
+              @if (!last) { <span>→</span> }
             }
           </div>
 
-          <!-- Calculated results -->
-          @if (lastResult.evaluationOrder.length > 0) {
-            <div class="result-section-label" style="margin-top:1rem">Calculated</div>
-            <div class="result-grid">
-              @for (key of lastResult.evaluationOrder; track key) {
-                <div class="result-tile purple-tile">
-                  <div class="tile-key">{{ key }}</div>
-                  <div class="tile-value large">
-                    {{ fmt(lastResult.scope[key]) }}
-                    @if (getCalcUnit(key)) {
-                      <span class="tile-unit purple-unit">{{ getCalcUnit(key) }}</span>
-                    }
-                  </div>
+          <!-- Input values summary -->
+          <div style="margin-bottom:1rem">
+            <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:0.6rem">Inputs</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem">
+              @for (entry of getInputEntries(lastResult.product.inputs); track entry.key) {
+                <div style="background:var(--bg-surface); border-radius:8px; padding:0.6rem 0.75rem; display:flex; justify-content:space-between; align-items:center">
+                  <code style="font-size:0.75rem; color:var(--text-muted); font-family:monospace">{{ entry.key }}</code>
+                  <span style="font-weight:600; font-size:0.9rem">{{ formatNumber(entry.value) }}</span>
                 </div>
               }
             </div>
-          }
+          </div>
+
+          <!-- Calculated values -->
+          <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:0.6rem">Calculated</div>
+          <div class="result-grid" style="margin-top:0">
+            @for (entry of getCalculatedEntries(lastResult.product.calculated); track entry.key) {
+              <div class="result-card">
+                <div class="result-key">{{ entry.key }}</div>
+                <div class="result-value">{{ formatNumber(entry.value) }}</div>
+              </div>
+            }
+          </div>
         </div>
       }
     </div>
 
-    <!-- ── RIGHT: PRODUCTS LIST ──────────────────────────────────────── -->
-    <div class="card" style="padding:0;overflow:hidden">
-      <div class="list-header">
-        <h3>📦 Saved Products
+    <!-- ── PRODUCTS LIST ────────────────────────────────────────────────── -->
+    <div class="card" style="padding:0; overflow:hidden">
+      <div style="padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between">
+        <h3 style="font-size:1rem; font-weight:600">
+          📦 Saved Products
           @if (products.length > 0) {
-            <span class="badge badge-muted" style="margin-left:.5rem">{{ products.length }}</span>
+            <span class="badge badge-muted" style="margin-left:0.5rem">{{ products.length }}</span>
           }
         </h3>
       </div>
 
       @if (loadingProducts) {
         <div class="loading-overlay">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg> Loading…
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+          Loading…
         </div>
       } @else if (products.length === 0) {
         <div class="empty-state">
           <div class="empty-icon">📦</div>
-          <p>No products yet.<br>Use the calculator on the left.</p>
+          <p>No products calculated yet.<br>Use the form to run your first calculation.</p>
         </div>
       } @else {
-        @for (product of products; track product._id) {
-          <div class="product-row">
-            <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
-                <span style="font-weight:600;font-size:.95rem">{{ product.name }}</span>
-                <span class="badge badge-success" style="font-size:.7rem">{{ product.categoryId.name }}</span>
+        <div style="display:flex; flex-direction:column; gap:0">
+          @for (product of products; track product._id) {
+            <div style="padding:1rem 1.5rem; border-bottom:1px solid var(--border); transition:background 0.15s" class="product-row">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem">
+                <div style="flex:1; min-width:0">
+                  <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem">
+                    <span style="font-weight:600; font-size:0.95rem">{{ product.name }}</span>
+                    <span class="badge badge-success" style="font-size:0.7rem">{{ product.categoryId.name }}</span>
+                  </div>
+
+                  <!-- Input chips -->
+                  <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.5rem">
+                    @for (entry of getInputEntries(product.inputs); track entry.key) {
+                      <span style="font-size:0.7rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:6px; padding:0.15rem 0.5rem; color:var(--text-muted)">
+                        <code style="font-family:monospace">{{ entry.key }}</code>=<b style="color:var(--text)">{{ formatNumber(entry.value) }}</b>
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Calculated result chips -->
+                  <div style="display:flex; flex-wrap:wrap; gap:0.3rem">
+                    @for (entry of getCalculatedEntries(product.calculated); track entry.key) {
+                      <span style="font-size:0.72rem; background:var(--accent-glow); border:1px solid rgba(108,99,255,0.3); border-radius:6px; padding:0.15rem 0.5rem; color:var(--accent-2)">
+                        <code style="font-family:monospace">{{ entry.key }}</code>=<b>{{ formatNumber(entry.value) }}</b>
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0">
+                  <span style="font-size:0.72rem; color:var(--text-muted)">{{ product.createdAt | date:'short' }}</span>
+                  <button class="btn btn-danger" style="padding:0.3rem 0.65rem; font-size:0.75rem"
+                    (click)="deleteProduct(product._id, product.name)">Delete</button>
+                </div>
               </div>
-
-              <!-- Inputs row -->
-              @if (getEntries(product.inputs).length > 0) {
-                <div style="display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.35rem">
-                  @for (e of getEntries(product.inputs); track e.key) {
-                    <span class="product-chip input-chip">
-                      <code>{{ e.key }}</code>=<b>{{ fmt(e.value) }}</b>
-                    </span>
-                  }
-                </div>
-              }
-
-              <!-- Calculated row -->
-              @if (getEntries(product.calculated).length > 0) {
-                <div style="display:flex;flex-wrap:wrap;gap:.25rem">
-                  @for (e of getEntries(product.calculated); track e.key) {
-                    <span class="product-chip calc-chip">
-                      <code>{{ e.key }}</code>=<b>{{ fmt(e.value) }}</b>
-                    </span>
-                  }
-                </div>
-              }
             </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.4rem;flex-shrink:0">
-              <span style="font-size:.72rem;color:var(--text-muted)">{{ product.createdAt | date:'short' }}</span>
-              <button class="btn btn-danger" style="padding:.3rem .6rem;font-size:.75rem"
-                (click)="deleteProduct(product._id, product.name)">Delete</button>
-            </div>
-          </div>
-        }
+          }
+        </div>
       }
     </div>
   </div>
 </div>
 
 <style>
-@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-.product-layout{display:grid;grid-template-columns:430px 1fr;gap:1.5rem;align-items:start}
-@media(max-width:960px){.product-layout{grid-template-columns:1fr}}
-
-/* Section containers */
-.input-section{border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem;margin-bottom:.5rem}
-.green-section{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.03)}
-.amber-section{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.03)}
-
-.section-head{display:flex;align-items:center;gap:.4rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.875rem}
-.section-head.green{color:#4ade80}
-.section-head.amber{color:#fbbf24}
-.section-count{margin-left:auto;font-size:.68rem;font-weight:700;background:rgba(255,255,255,.1);padding:.1rem .45rem;border-radius:99px}
-.amber-count{background:rgba(245,158,11,.12);color:#fbbf24}
-
-/* Label */
-.input-param-label{display:flex;align-items:center;justify-content:space-between;font-size:.82rem;font-weight:500;color:var(--text);text-transform:none !important;letter-spacing:0 !important;margin-bottom:.35rem}
-.input-param-name{flex:1}
-.param-meta{display:flex;align-items:center;gap:.3rem;flex-shrink:0}
-
-/* Key + unit chips in label */
-.key-chip{font-family:monospace;font-size:.68rem;color:var(--text-muted);background:var(--bg-surface);border:1px solid var(--border);border-radius:4px;padding:.1rem .35rem}
-.unit-tag{font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:99px}
-.green-unit{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
-.amber-unit{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
-.purple-unit{background:rgba(108,99,255,.12);color:var(--accent-2);border:1px solid rgba(108,99,255,.3)}
-
-/* Input field + suffix */
-.field-with-unit{position:relative;display:flex;align-items:center}
-.field-with-unit .form-input{padding-right:2.75rem}
-.unit-suffix{position:absolute;right:.75rem;font-size:.82rem;font-weight:700;pointer-events:none}
-.green-suffix{color:#4ade80}
-.amber-suffix{color:#fbbf24}
-
-/* Formula chain */
-.chain-summary{font-size:.78rem;color:var(--text-muted);cursor:pointer;user-select:none;padding:.25rem 0}
-.chain-list{margin-top:.7rem;display:flex;flex-direction:column;gap:.4rem}
-.chain-row{display:flex;align-items:center;gap:.4rem;font-size:.78rem;background:var(--bg-surface);border-radius:6px;padding:.45rem .7rem;border:1px solid var(--border)}
-.chain-key{font-family:monospace;color:var(--accent-2);background:rgba(108,99,255,.08);padding:.15rem .4rem;border-radius:4px;min-width:70px}
-.chain-eq{color:var(--text-muted);margin:0 .1rem}
-.chain-formula{font-family:monospace;color:var(--text-muted);flex:1;word-break:break-all}
-
-/* Run button */
-.run-btn{width:100%;justify-content:center;padding:.75rem;margin-top:1rem;font-size:.95rem}
-
-/* Result card */
-.result-card{border:1px solid rgba(108,99,255,.2)}
-.result-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;font-size:.95rem;font-weight:600}
-.eval-order{display:flex;align-items:center;flex-wrap:wrap;gap:.25rem;font-size:.72rem;color:var(--text-muted);margin-bottom:1rem}
-.order-key{font-family:monospace;background:var(--bg-surface);border:1px solid var(--border);border-radius:4px;padding:.1rem .4rem;color:var(--accent-2)}
-.order-arrow{color:var(--border)}
-.result-section-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600;margin-bottom:.5rem}
-
-/* Result grid */
-.result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem}
-.result-tile{background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem}
-.purple-tile{border-color:rgba(108,99,255,.25);background:rgba(108,99,255,.05)}
-.amber-tile{border-color:rgba(245,158,11,.2);background:rgba(245,158,11,.03)}
-.tile-key{font-size:.72rem;font-weight:600;color:var(--text-muted);margin-bottom:.1rem;truncate:ellipsis;overflow:hidden;white-space:nowrap}
-.tile-code{font-family:monospace;font-size:.65rem;color:var(--accent-2);margin-bottom:.35rem}
-.tile-value{font-size:1.05rem;font-weight:700;display:flex;align-items:baseline;gap:.3rem;flex-wrap:wrap}
-.tile-value.large{font-size:1.2rem}
-.tile-unit{font-size:.7rem;font-weight:600}
-
-/* Products list */
-.list-header{padding:1.1rem 1.5rem;border-bottom:1px solid var(--border)}
-.list-header h3{font-size:1rem;font-weight:600}
-.product-row{padding:.875rem 1.5rem;border-bottom:1px solid var(--border);display:flex;gap:1rem;transition:background .15s}
-.product-row:hover{background:var(--bg-surface)}
-.product-chip{font-size:.7rem;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;padding:.15rem .5rem;color:var(--text-muted)}
-.product-chip code{font-family:monospace}
-.product-chip b{color:var(--text)}
-.calc-chip{background:var(--accent-glow);border:1px solid rgba(108,99,255,.3);color:var(--accent-2)}
-.calc-chip b{color:var(--accent-2)}
-.input-chip b{color:var(--text)}
+@keyframes slideIn {
+  from { opacity:0; transform:translateY(-8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.product-row:hover { background: var(--bg-surface); }
+@media(max-width:900px){
+  div[style*="grid-template-columns:420px"] {
+    grid-template-columns: 1fr !important;
+  }
+}
 </style>

@@ -1,20 +1,21 @@
 # Dependencies
 node_modules/
 
-# Environment variables (NEVER commit secrets)
+# Environment variables
 .env
-.env.*
-!.env.example
 
 # Logs
-logs/
-*.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
-# Runtime / OS
+# OS Files
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDEs
 .vscode/
 .idea/
+*.swp
+*.swo

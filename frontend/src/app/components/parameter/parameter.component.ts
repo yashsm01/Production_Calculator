@@ -66,6 +66,11 @@ export class ParameterComponent implements OnInit {
   unitSearch = '';
   headerSearch = '';
 
+  // Table Filters
+  tableFilterText = '';
+  tableFilterCategory = '';
+  tableFilterHeader = '';
+
   loading = false;
   formVisible = false;
   editMode = false;
@@ -101,6 +106,37 @@ export class ParameterComponent implements OnInit {
   private formulaInput$ = new Subject<string>();
 
   ngOnInit(): void {
+    this.dataSource.filterPredicate = (data: Parameter, filterRaw: string) => {
+      try {
+        const filter = JSON.parse(filterRaw);
+        
+        let matchText = true;
+        let matchCat = true;
+        let matchHeader = true;
+
+        if (filter.text) {
+          const searchStr = `${data.name} ${data.key} ${data.formula}`.toLowerCase();
+          matchText = searchStr.includes(filter.text.toLowerCase());
+        }
+
+        if (filter.categoryId) {
+          const catId = (data.categoryId as any)?._id || data.categoryId;
+          matchCat = catId === filter.categoryId;
+        }
+
+        if (filter.headerInfoId) {
+          const headId = (data.headerInfoId as any)?._id || data.headerInfoId;
+          matchHeader = headId === filter.headerInfoId;
+        }
+
+        return matchText && matchCat && matchHeader;
+      } catch (e) {
+        // Fallback for direct string (if any)
+        const searchStr = `${data.name} ${data.key} ${data.formula}`.toLowerCase();
+        return searchStr.includes(filterRaw.toLowerCase());
+      }
+    };
+
     this.load();
     this.loadMeta();
     this.setupFormulaValidation();
@@ -120,9 +156,14 @@ export class ParameterComponent implements OnInit {
     });
   }
 
-  applyFilter(event: Event): void {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
+  applyFilter(): void {
+    const filterObj = {
+      text: this.tableFilterText.trim(),
+      categoryId: this.tableFilterCategory,
+      headerInfoId: this.tableFilterHeader
+    };
+    
+    this.dataSource.filter = JSON.stringify(filterObj);
 
     if (this.dataSource.paginator) {
       this.dataSource.paginator.firstPage();

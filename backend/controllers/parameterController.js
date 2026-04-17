@@ -119,6 +119,8 @@ exports.remove = async (req, res, next) => {
 // POST /api/parameter/validate-formula — validate + extract variables without saving
 exports.validateFormulaEndpoint = async (req, res, next) => {
   try {
+    const { formula } = req.body;
+    
     // Handle empty formula as an input
     if (!formula || formula.trim() === '') {
       return res.json({ valid: true, variables: [], isInput: true });
@@ -128,6 +130,21 @@ exports.validateFormulaEndpoint = async (req, res, next) => {
     if (!valid) return res.status(400).json({ valid: false, error });
 
     const variables = extractVariables(formula);
+    
+    // Check if variables exist in database
+    const allParams = await Parameter.find().select('key');
+    const validKeys = allParams.map(p => p.key.toLowerCase());
+    
+    const missingVars = variables.filter(v => !validKeys.includes(v.toLowerCase()));
+    
+    if (missingVars.length > 0) {
+      return res.json({ 
+        valid: false, 
+        error: `Variables not found in system: ${missingVars.join(', ')}`,
+        variables 
+      });
+    }
+
     res.json({ valid: true, variables });
   } catch (err) {
     next(err);

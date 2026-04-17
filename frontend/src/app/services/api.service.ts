@@ -89,6 +89,9 @@ export class ApiService {
   getProducts(): Observable<Product[]> {
     return this.http.get<Product[]>(`${BASE}/product`);
   }
+  getProductById(id: string): Observable<Product> {
+    return this.http.get<Product>(`${BASE}/product/${id}`);
+  }
   createProduct(data: {
     name: string;
     categoryId: string;

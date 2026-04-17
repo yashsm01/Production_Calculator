@@ -1,0 +1,205 @@
+/* A4 Printable Layout Styles */
+
+.report-wrapper {
+  background: #e2e8f0;
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: 'Roboto', sans-serif;
+  color: #1e293b;
+}
+
+.report-container {
+  background: white;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.print-controls {
+  position: sticky;
+  top: 2rem;
+  margin-right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Document Typography & Elements */
+.doc-header {
+  border-bottom: 2px solid #00B4D8;
+  padding-bottom: 2rem;
+  margin-bottom: 3rem;
+}
+
+.doc-title {
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.doc-meta {
+  margin: 0.5rem 0 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.doc-meta strong {
+  color: #334155;
+  font-weight: 600;
+}
+
+/* Sections */
+.group-section {
+  margin-bottom: 3rem;
+  page-break-inside: avoid;
+}
+
+.group-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0077b6;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Data Table */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.report-table tr {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.report-table tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.report-table td {
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+}
+
+.col-name {
+  width: 45%;
+}
+
+.param-name {
+  font-weight: 500;
+  font-size: 1.05rem;
+  color: #334155;
+}
+
+.param-key {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-family: 'Fira Code', monospace;
+  display: block;
+}
+
+.col-badge {
+  width: 15%;
+  text-align: center;
+}
+
+.type-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.badge-input {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.badge-formula {
+  background: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+
+.col-value {
+  width: 40%;
+  text-align: right;
+  font-weight: 600;
+  font-size: 1.15rem;
+  font-family: 'Fira Code', monospace;
+  color: #0f172a;
+}
+
+.val-unit {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+/* ───────────────────────────────────────────────────────── */
+/* Print Specific Styles */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+  
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background: white;
+  }
+  
+  .report-wrapper {
+    background: transparent;
+    padding: 0;
+    display: block;
+  }
+  
+  .report-container {
+    width: 100%;
+    max-width: 100%;
+    box-shadow: none;
+    padding: 0;
+    page-break-after: auto;
+  }
+  
+  .print-controls {
+    display: none !important;
+  }
+
+  /* Angular overrides to hide the global toolbar during print */
+  nav.app-nav {
+    display: none !important;
+  }
+
+  /* Force background colors to print if enabled in browser settings */
+  .badge-input {
+    border: none;
+    color: #4338ca;
+  }
+  .badge-formula {
+    border: none;
+    color: #7e22ce;
+  }
+  .report-table tr:nth-child(even) {
+    background-color: transparent !important;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}

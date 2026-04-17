@@ -106,11 +106,31 @@
   }
 
   <mat-card appearance="outlined" style="padding:0;">
-    <div style="padding: 16px 24px; border-bottom: 1px solid var(--border);">
-      <mat-form-field appearance="outline" style="width:100%; max-width:400px; margin-bottom:-1.25em;">
+    <div style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+      <mat-form-field appearance="outline" style="flex: 1; min-width: 250px; margin-bottom:-1.25em;">
         <mat-label>Search Parameters</mat-label>
         <mat-icon matPrefix>search</mat-icon>
-        <input matInput (keyup)="applyFilter($event)" placeholder="Search keys, names...">
+        <input matInput [(ngModel)]="tableFilterText" (keyup)="applyFilter()" placeholder="Search keys, names...">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 1; min-width: 200px; margin-bottom:-1.25em;">
+        <mat-label>Filter by Category</mat-label>
+        <mat-select [(ngModel)]="tableFilterCategory" (selectionChange)="applyFilter()">
+          <mat-option value="">All Categories</mat-option>
+          @for (cat of categories; track cat._id) {
+            <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 1; min-width: 200px; margin-bottom:-1.25em;">
+        <mat-label>Filter by Header Info</mat-label>
+        <mat-select [(ngModel)]="tableFilterHeader" (selectionChange)="applyFilter()">
+          <mat-option value="">All Headers</mat-option>
+          @for (info of headerInfos; track info._id) {
+            <mat-option [value]="info._id">{{ info.name }}</mat-option>
+          }
+        </mat-select>
       </mat-form-field>
     </div>
 

@@ -73,3 +73,15 @@ body {
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
+
+/* ── Print Overrides ─────────────────────────── */
+@media print {
+  .app-toolbar {
+    display: none !important;
+  }
+  .page-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+}

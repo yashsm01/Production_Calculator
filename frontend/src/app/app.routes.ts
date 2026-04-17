@@ -23,6 +23,11 @@ export const routes: Routes = [
       import('./components/product/product.component').then((m) => m.ProductComponent),
   },
   {
+    path: 'report/:id',
+    loadComponent: () =>
+      import('./components/product-report/product-report.component').then((m) => m.ProductReportComponent),
+  },
+  {
     path: 'header-info',
     loadComponent: () =>
       import('./components/header-info/header-info.component').then((m) => m.HeaderInfoComponent),

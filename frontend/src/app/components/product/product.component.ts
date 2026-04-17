@@ -15,6 +15,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-product',
@@ -34,7 +35,8 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
     MatSnackBarModule,
     MatSelectModule,
     MatDividerModule,
-    NgxMatSelectSearchModule
+    NgxMatSelectSearchModule,
+    RouterModule
   ],
   templateUrl: './product.component.html',
   styleUrl: './product.component.css',

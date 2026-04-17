@@ -45,38 +45,54 @@
         </div>
 
         <div class="form-group">
-          <label for="p-formula">
-            Formula
-            @if (validatingFormula) {
-              <span style="color:var(--text-muted); font-weight:400"> ⏳ validating…</span>
-            } @else if (formulaValid === true) {
-              <span style="color:var(--success); font-weight:400"> ✓ valid</span>
-            } @else if (formulaValid === false) {
-              <span style="color:var(--danger); font-weight:400"> ✗ invalid</span>
-            }
-          </label>
-          <input id="p-formula" class="form-input"
-            [class.error]="formulaValid === false"
-            [(ngModel)]="form.formula"
-            (ngModelChange)="onFormulaChange($event)"
-            placeholder="e.g. length * width * height"
-            style="font-family:monospace" />
-
-          @if (formulaValid === false && formulaError) {
-            <div style="font-size:0.72rem; color:var(--danger); margin-top:0.25rem">
-              {{ formulaError }}
-            </div>
-          }
-
-          @if (extractedVars.length > 0) {
-            <div style="margin-top:0.6rem">
-              <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.35rem">Variables detected:</div>
-              @for (v of extractedVars; track v) {
-                <span class="var-chip">{{ v }}</span>
-              }
-            </div>
-          }
+          <label>Parameter Type</label>
+          <div style="display:flex; gap:1rem; margin-top:0.35rem">
+            <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-weight:normal; color:var(--text)">
+              <input type="radio" name="ptype" value="input" [(ngModel)]="form.type" />
+              User Input
+            </label>
+            <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-weight:normal; color:var(--text)">
+              <input type="radio" name="ptype" value="formula" [(ngModel)]="form.type" />
+              Calculated Formula
+            </label>
+          </div>
         </div>
+
+        @if (form.type === 'formula') {
+          <div class="form-group">
+            <label for="p-formula">
+              Formula
+              @if (validatingFormula) {
+                <span style="color:var(--text-muted); font-weight:400"> ⏳ validating…</span>
+              } @else if (formulaValid === true) {
+                <span style="color:var(--success); font-weight:400"> ✓ valid</span>
+              } @else if (formulaValid === false) {
+                <span style="color:var(--danger); font-weight:400"> ✗ invalid</span>
+              }
+            </label>
+            <input id="p-formula" class="form-input"
+              [class.error]="formulaValid === false"
+              [(ngModel)]="form.formula"
+              (ngModelChange)="onFormulaChange($event)"
+              placeholder="e.g. length * width * height"
+              style="font-family:monospace" />
+
+            @if (formulaValid === false && formulaError) {
+              <div style="font-size:0.72rem; color:var(--danger); margin-top:0.25rem">
+                {{ formulaError }}
+              </div>
+            }
+
+            @if (extractedVars.length > 0) {
+              <div style="margin-top:0.6rem">
+                <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:0.35rem">Variables detected:</div>
+                @for (v of extractedVars; track v) {
+                  <span class="var-chip">{{ v }}</span>
+                }
+              </div>
+            }
+          </div>
+        }
 
         <div class="form-group">
           <label for="p-unit">Unit <span style="font-weight:400; color:var(--text-muted)">(optional)</span></label>
@@ -137,7 +153,11 @@
                 <td style="font-weight:500">{{ param.name }}</td>
                 <td><code class="formula-code" style="font-size:0.78rem">{{ param.key }}</code></td>
                 <td>
-                  <code class="formula-code">{{ param.formula }}</code>
+                  @if (param.type === 'input') {
+                    <span class="badge badge-muted" style="border: 1px dashed var(--text-muted)">(User Input)</span>
+                  } @else {
+                    <code class="formula-code">{{ param.formula }}</code>
+                  }
                 </td>
                 <td>
                   @if (getUnitSymbol(param) !== '—') {

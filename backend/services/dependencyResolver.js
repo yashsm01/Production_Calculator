@@ -23,18 +23,20 @@ const { parse } = require('mathjs');
  * @returns {string[]}  array of variable names
  */
 function extractVariables(formula) {
+  if (!formula || formula.trim() === '') return [];
   try {
     const node = parse(formula);
     const vars = new Set();
     node.traverse((n) => {
       if (n.isSymbolNode) {
-        // Exclude mathjs built-in constants like pi, e, true, false, etc.
+        // Exclude mathjs built-in constants
         const builtins = new Set([
           'pi', 'e', 'true', 'false', 'Infinity', 'NaN',
           'i', 'phi', 'tau', 'null', 'undefined',
         ]);
         if (!builtins.has(n.name)) {
-          vars.add(n.name);
+          // Normalize to lowercase for case-insensitive matching with parameter keys
+          vars.add(n.name.toLowerCase());
         }
       }
     });
@@ -137,9 +139,15 @@ function collectAllInputVariables(parameters) {
   const inputs = new Set();
 
   for (const param of parameters) {
-    const vars = extractVariables(param.formula);
-    for (const v of vars) {
-      if (!keySet.has(v)) inputs.add(v);
+    // 1. If a parameter is explicitly an input (or has no formula fallback)
+    if (param.type === 'input' || !param.formula || param.formula.trim() === '') {
+      inputs.add(param.key);
+    } else {
+      // 2. If it has a formula, extract variables that aren't defined parameters
+      const vars = extractVariables(param.formula);
+      for (const v of vars) {
+        if (!keySet.has(v)) inputs.add(v);
+      }
     }
   }
 

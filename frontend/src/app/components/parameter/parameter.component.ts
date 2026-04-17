@@ -24,9 +24,17 @@ export class ParameterComponent implements OnInit {
   error = '';
   success = '';
 
-  form = {
+  form: {
+    name: string;
+    key: string;
+    type: 'input' | 'formula';
+    formula: string;
+    unitId: string;
+    categoryId: string;
+  } = {
     name: '',
     key: '',
+    type: 'formula',
     formula: '',
     unitId: '',
     categoryId: '',
@@ -107,7 +115,7 @@ export class ParameterComponent implements OnInit {
   openCreate(): void {
     this.editMode = false;
     this.editId = '';
-    this.form = { name: '', key: '', formula: '', unitId: '', categoryId: '' };
+    this.form = { name: '', key: '', type: 'formula', formula: '', unitId: '', categoryId: '' };
     this.formulaValid = null;
     this.extractedVars = [];
     this.formulaError = '';
@@ -122,6 +130,7 @@ export class ParameterComponent implements OnInit {
     this.form = {
       name: param.name,
       key: param.key,
+      type: param.type || 'formula',
       formula: param.formula,
       unitId: (param.unit as any)?._id || '',
       categoryId: (param.categoryId as any)?._id || '',
@@ -142,21 +151,29 @@ export class ParameterComponent implements OnInit {
   }
 
   save(): void {
-    if (!this.form.name.trim() || !this.form.key.trim() || !this.form.formula.trim()) {
-      this.error = 'Name, Key, and Formula are required';
+    if (!this.form.name.trim() || !this.form.key.trim()) {
+      this.error = 'Name and Key are required';
       return;
     }
-    if (this.formulaValid === false) {
-      this.error = 'Please fix the formula error before saving';
-      return;
+    if (this.form.type === 'formula') {
+      if (!this.form.formula.trim()) {
+        this.error = 'Formula is required for Calculated Parameters';
+        return;
+      }
+      if (this.formulaValid === false) {
+        this.error = 'Please fix the formula error before saving';
+        return;
+      }
     }
+    
     this.saving = true;
     this.error = '';
 
     const payload: any = {
       name: this.form.name,
       key: this.form.key,
-      formula: this.form.formula,
+      type: this.form.type,
+      formula: this.form.type === 'formula' ? this.form.formula : '',
       unit: this.form.unitId || null,
       categoryId: this.form.categoryId || null,
     };

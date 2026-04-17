@@ -53,31 +53,33 @@
           </div>
         }
 
-        <!-- Dynamic Input Fields -->
-        @if (!loadingInputs && inputVariables.length > 0) {
-          <div style="border-top:1px solid var(--border); margin:1rem 0; padding-top:1rem">
-            <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-              Input Variables ({{ inputVariables.length }})
-            </div>
-
-            @for (varName of inputVariables; track varName) {
-              <div class="form-group">
-                <label [for]="'inp-' + varName">
-                  {{ getInputLabel(varName) }}
-                  <code style="font-family:monospace; font-size:0.7rem; color:var(--accent-2); background:var(--accent-glow); padding:0.1rem 0.35rem; border-radius:4px; margin-left:0.35rem">{{ varName }}</code>
-                </label>
-                <input
-                  [id]="'inp-' + varName"
-                  type="number"
-                  class="form-input"
-                  [(ngModel)]="inputValues[varName]"
-                  [placeholder]="'Enter ' + getInputLabel(varName)"
-                  step="any"
-                />
+        @if (!loadingInputs && selectedCategoryId) {
+          <!-- Dynamic Input Fields -->
+          @if (inputVariables.length > 0) {
+            <div style="border-top:1px solid var(--border); margin:1rem 0; padding-top:1rem">
+              <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Input Variables ({{ inputVariables.length }})
               </div>
-            }
-          </div>
+
+              @for (varName of inputVariables; track varName) {
+                <div class="form-group">
+                  <label [for]="'inp-' + varName">
+                    {{ getInputLabel(varName) }}
+                    <code style="font-family:monospace; font-size:0.7rem; color:var(--accent-2); background:var(--accent-glow); padding:0.1rem 0.35rem; border-radius:4px; margin-left:0.35rem">{{ varName }}</code>
+                  </label>
+                  <input
+                    [id]="'inp-' + varName"
+                    type="number"
+                    class="form-input"
+                    [(ngModel)]="inputValues[varName]"
+                    [placeholder]="'Enter ' + getInputLabel(varName)"
+                    step="any"
+                  />
+                </div>
+              }
+            </div>
+          }
 
           <!-- Dependency Chain (mini visualization) -->
           @if (categoryParameters.length > 0) {
@@ -90,72 +92,85 @@
                   <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.78rem">
                     <code style="color:var(--accent-2); font-family:monospace; background:rgba(108,99,255,0.08); padding:0.15rem 0.4rem; border-radius:4px; min-width:90px">{{ param.key }}</code>
                     <span style="color:var(--text-muted)">=</span>
-                    <code style="color:var(--text-muted); font-family:monospace">{{ param.formula }}</code>
+                    @if (param.type === 'input') {
+                      <span class="badge badge-muted" style="border: 1px dashed var(--text-muted); font-size: 0.65rem">(User Input)</span>
+                    } @else {
+                      <code style="color:var(--text-muted); font-family:monospace">{{ param.formula || '(Input Fallback)' }}</code>
+                    }
                   </div>
                 }
               </div>
             </details>
           }
 
-          <button
-            class="btn btn-primary"
-            style="width:100%; justify-content:center; padding:0.75rem"
-            (click)="submit()"
-            [disabled]="submitting"
-          >
-            @if (submitting) {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
-              Calculating…
-            } @else {
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
-              Run Calculation
-            }
-          </button>
-        }
-
-        @if (!loadingInputs && selectedCategoryId && inputVariables.length === 0 && categoryParameters.length === 0) {
-          <div class="alert alert-info" style="margin-top:1rem">
-            No parameters defined for this category. Please add parameters first.
-          </div>
+          @if (categoryParameters.length > 0) {
+            <button
+              class="btn btn-primary"
+              style="width:100%; justify-content:center; padding:0.75rem"
+              (click)="submit()"
+              [disabled]="submitting"
+            >
+              @if (submitting) {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
+                Calculating…
+              } @else {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
+                Run Calculation
+              }
+            </button>
+          } @else {
+            <div class="alert alert-info" style="margin-top:1rem">
+              No parameters defined for this category. Please add parameters first.
+            </div>
+          }
         }
       </div>
 
       <!-- ── CALCULATION RESULTS ──────────────────────────────────────── -->
       @if (lastResult) {
         <div class="card" style="margin-top:1.5rem; animation:slideIn 0.3s ease">
-          <h3 style="font-size:1rem; font-weight:600; color:var(--text); margin-bottom:0.5rem">
-            📊 Results — <span style="color:var(--accent-2)">{{ lastResult.product.name }}</span>
-          </h3>
-          <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1.25rem">
-            Evaluation order:
-            @for (key of lastResult.evaluationOrder; track key; let last = $last) {
-              <code class="formula-code" style="font-size:0.7rem; margin:0 0.2rem">{{ key }}</code>
-              @if (!last) { <span>→</span> }
-            }
+          <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1.25rem">
+            <h2 style="font-size:1rem; font-weight:600; color:var(--text)">📊 Calculation Steps</h2>
+            <span class="badge badge-accent">{{ lastResult.product.name }}</span>
           </div>
 
-          <!-- Input values summary -->
-          <div style="margin-bottom:1rem">
-            <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:0.6rem">Inputs</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem">
-              @for (entry of getInputEntries(lastResult.product.inputs); track entry.key) {
-                <div style="background:var(--bg-surface); border-radius:8px; padding:0.6rem 0.75rem; display:flex; justify-content:space-between; align-items:center">
-                  <code style="font-size:0.75rem; color:var(--text-muted); font-family:monospace">{{ entry.key }}</code>
-                  <span style="font-weight:600; font-size:0.9rem">{{ formatNumber(entry.value) }}</span>
-                </div>
-              }
+          <!-- Vertical Step-by-Step display -->
+          <div style="display:flex; flex-direction:column; gap:1rem; padding-left:0.5rem; border-left:2px solid var(--border)">
+            
+            <!-- Inputs Step -->
+            <div style="position:relative; padding-left:1.5rem">
+              <div style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--text-muted); border:2px solid var(--bg-card)"></div>
+              <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.6rem">Step 1: Provided Inputs</div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:0.5rem">
+                @for (entry of getInputEntries(lastResult.product.inputs); track entry.key) {
+                  <div style="background:var(--bg-surface); border-radius:8px; padding:0.5rem 0.75rem; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border)">
+                    <code style="font-size:0.75rem; color:var(--text-muted); font-family:monospace">{{ entry.key }}</code>
+                    <span style="font-weight:600; font-size:0.9rem">{{ formatNumber(entry.value) }}</span>
+                  </div>
+                }
+              </div>
             </div>
-          </div>
 
-          <!-- Calculated values -->
-          <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:0.6rem">Calculated</div>
-          <div class="result-grid" style="margin-top:0">
-            @for (entry of getCalculatedEntries(lastResult.product.calculated); track entry.key) {
-              <div class="result-card">
-                <div class="result-key">{{ entry.key }}</div>
-                <div class="result-value">{{ formatNumber(entry.value) }}</div>
+            <!-- Calculation Steps -->
+            @for (key of lastResult.evaluationOrder; track key; let i = $index) {
+              <div style="position:relative; padding-left:1.5rem">
+                <div style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--bg-card)"></div>
+                <div style="font-size:0.75rem; font-weight:600; color:var(--accent-2); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem">
+                  Step {{ i + 2 }}: Calculate {{ key }}
+                </div>
+                <div class="result-card" style="margin-top:0; border-color:rgba(108,99,255,0.3); background:rgba(108,99,255,0.05); text-align:left; display:flex; justify-content:space-between; align-items:center">
+                  <div>
+                    <div class="result-key" style="margin-bottom:0">{{ key }}</div>
+                  </div>
+                  <div class="result-value" style="font-size:1.25rem">{{ formatNumber(lastResult.product.calculated[key]) }}</div>
+                </div>
               </div>
             }
+
+            <div style="position:relative; padding-left:1.5rem">
+              <div style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--success); border:2px solid var(--bg-card)"></div>
+              <div style="font-size:0.75rem; font-weight:600; color:var(--success); text-transform:uppercase; letter-spacing:0.05em">Calculation Complete ✨</div>
+            </div>
           </div>
         </div>
       }

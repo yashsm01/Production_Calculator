@@ -15,10 +15,15 @@ const parameterSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^[a-z_][a-z0-9_]*$/, 'Key must be a valid identifier (letters, numbers, underscores)'],
     },
+    type: {
+      type: String,
+      enum: ['input', 'formula'],
+      default: 'formula',
+    },
     formula: {
       type: String,
-      required: [true, 'Formula is required'],
       trim: true,
+      default: '',
     },
     unit: {
       type: mongoose.Schema.Types.ObjectId,

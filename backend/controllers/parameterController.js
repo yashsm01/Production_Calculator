@@ -33,11 +33,16 @@ exports.getById = async (req, res, next) => {
 // POST /api/parameter
 exports.create = async (req, res, next) => {
   try {
-    const { name, key, formula, unit, categoryId } = req.body;
+    let { name, key, type, formula, unit, categoryId } = req.body;
 
-    // Validate formula syntax
-    const { valid, error } = validateFormula(formula);
-    if (!valid) return res.status(400).json({ message: `Invalid formula: ${error}` });
+    type = type || 'formula';
+    if (type === 'input') {
+      formula = '';
+    } else {
+      // Validate formula syntax (if not input)
+      const { valid, error } = validateFormula(formula || '');
+      if (!valid) return res.status(400).json({ message: `Invalid formula: ${error}` });
+    }
 
     // Check key uniqueness
     const existing = await Parameter.findOne({ key: key.toLowerCase() });
@@ -46,6 +51,7 @@ exports.create = async (req, res, next) => {
     const parameter = await Parameter.create({
       name,
       key: key.toLowerCase(),
+      type,
       formula,
       unit: unit || null,
       categoryId: categoryId || null,
@@ -60,11 +66,16 @@ exports.create = async (req, res, next) => {
 // PUT /api/parameter/:id
 exports.update = async (req, res, next) => {
   try {
-    const { name, key, formula, unit, categoryId } = req.body;
+    let { name, key, type, formula, unit, categoryId } = req.body;
 
-    // Validate formula syntax
-    const { valid, error } = validateFormula(formula);
-    if (!valid) return res.status(400).json({ message: `Invalid formula: ${error}` });
+    type = type || 'formula';
+    if (type === 'input') {
+      formula = '';
+    } else {
+      // Validate formula syntax (if not empty)
+      const { valid, error } = validateFormula(formula || '');
+      if (!valid) return res.status(400).json({ message: `Invalid formula: ${error}` });
+    }
 
     // Check key uniqueness (excluding self)
     if (key) {
@@ -77,7 +88,7 @@ exports.update = async (req, res, next) => {
 
     const parameter = await Parameter.findByIdAndUpdate(
       req.params.id,
-      { name, key: key ? key.toLowerCase() : undefined, formula, unit: unit || null, categoryId: categoryId || null },
+      { name, key: key ? key.toLowerCase() : undefined, type, formula, unit: unit || null, categoryId: categoryId || null },
       { new: true, runValidators: true }
     )
       .populate('unit', 'name symbol')
@@ -104,8 +115,10 @@ exports.remove = async (req, res, next) => {
 // POST /api/parameter/validate-formula — validate + extract variables without saving
 exports.validateFormulaEndpoint = async (req, res, next) => {
   try {
-    const { formula } = req.body;
-    if (!formula) return res.status(400).json({ message: 'Formula is required' });
+    // Handle empty formula as an input
+    if (!formula || formula.trim() === '') {
+      return res.json({ valid: true, variables: [], isInput: true });
+    }
 
     const { valid, error } = validateFormula(formula);
     if (!valid) return res.status(400).json({ valid: false, error });

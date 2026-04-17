@@ -41,8 +41,9 @@ async function runEngine(parameters, inputs) {
     return { scope: { ...inputs }, order: [] };
   }
 
-  // ── Step 1: Topological sort ────────────────────────────────────────────────
-  const sortedParams = topologicalSort(parameters);
+  // ── Step 1: Filter parameters (Only those with formulas need sorting/exec) ──
+  const formulaParams = parameters.filter((p) => p.type !== 'input' && p.formula && p.formula.trim() !== '');
+  const sortedParams = topologicalSort(formulaParams);
 
   // ── Step 2: Check for missing inputs ───────────────────────────────────────
   const requiredInputs = collectAllInputVariables(parameters);
@@ -60,14 +61,15 @@ async function runEngine(parameters, inputs) {
     if (isNaN(numVal)) {
       throw new Error(`Input "${key}" must be a number, got: "${value}"`);
     }
-    scope[key] = numVal;
+    // Store in scope as lowercase to match normalized variable extraction
+    scope[key.toLowerCase()] = numVal;
   }
 
   // ── Step 4: Evaluate parameters in topological order ──────────────────────
   const order = [];
   for (const param of sortedParams) {
     try {
-      const result = math.evaluate(param.formula, scope);
+      const result = math.evaluate(param.formula.toLowerCase(), scope);
 
       // Ensure result is a plain number (not a mathjs Unit or Complex)
       if (typeof result === 'object' && result !== null && result.toNumber) {
@@ -96,6 +98,9 @@ async function runEngine(parameters, inputs) {
  * @param {string} formula
  */
 function validateFormula(formula) {
+  if (!formula || formula.trim() === '') {
+    return { valid: true, isInput: true };
+  }
   try {
     const { parse } = require('mathjs');
     parse(formula);

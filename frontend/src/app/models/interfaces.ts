@@ -17,6 +17,7 @@ export interface Parameter {
   _id: string;
   name: string;
   key: string;
+  type?: 'input' | 'formula';
   formula: string;
   unit?: Unit | null;
   categoryId?: Category | null;

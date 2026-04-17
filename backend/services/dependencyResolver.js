@@ -32,7 +32,7 @@ function extractVariables(formula) {
         // Exclude mathjs built-in constants
         const builtins = new Set([
           'pi', 'e', 'true', 'false', 'Infinity', 'NaN',
-          'i', 'phi', 'tau', 'null', 'undefined',
+          'i', 'phi', 'tau', 'null', 'undefined', 'iferror'
         ]);
         if (!builtins.has(n.name)) {
           // Normalize to lowercase for case-insensitive matching with parameter keys

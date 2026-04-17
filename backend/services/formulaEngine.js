@@ -21,6 +21,17 @@ const { topologicalSort, collectAllInputVariables } = require('./dependencyResol
 // Create a mathjs instance with all functions available
 const math = create(all);
 
+// Inject Excel-like IFERROR support
+math.import({
+  iferror: function (val, fallback) {
+    // Treat divide-by-zero (Infinity) or NaN as an error
+    if (val === Infinity || val === -Infinity || Number.isNaN(val) || val === undefined || val === null) {
+      return fallback;
+    }
+    return val;
+  }
+});
+
 /**
  * Run the formula engine.
  *

@@ -1,23 +1,62 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { Category, Product, EngineResult, Parameter } from '../../models/interfaces';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatCardModule } from '@angular/material/card';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDividerModule } from '@angular/material/divider';
+import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 
 @Component({
   selector: 'app-product',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule, 
+    FormsModule,
+    ReactiveFormsModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatButtonModule,
+    MatIconModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatCardModule,
+    MatSnackBarModule,
+    MatSelectModule,
+    MatDividerModule,
+    NgxMatSelectSearchModule
+  ],
   templateUrl: './product.component.html',
   styleUrl: './product.component.css',
 })
 export class ProductComponent implements OnInit {
   // ── Existing products list ───────────────────────────────────────────────
-  products: Product[] = [];
+  dataSource = new MatTableDataSource<Product>([]);
+  displayedColumns: string[] = ['name', 'category', 'createdAt', 'actions'];
+
+  @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
+    this.dataSource.paginator = mp;
+  }
+  @ViewChild(MatSort) set matSort(ms: MatSort) {
+    this.dataSource.sort = ms;
+  }
+
   loadingProducts = false;
 
   // ── Form state ─────────────────────────────────────────────────────────
   categories: Category[] = [];
+  filteredCategories: Category[] = [];
+  catSearch = '';
   selectedCategoryId = '';
   productName = '';
 
@@ -37,18 +76,36 @@ export class ProductComponent implements OnInit {
   // Last calculation result
   lastResult: EngineResult | null = null;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.loadProducts();
-    this.api.getCategories().subscribe((cats) => (this.categories = cats));
+    this.api.getCategories().subscribe((cats) => {
+      this.categories = cats;
+      this.filterCategories();
+    });
+  }
+
+  filterCategories(): void {
+    if (!this.catSearch) { this.filteredCategories = [...this.categories]; return; }
+    const s = this.catSearch.toLowerCase();
+    this.filteredCategories = this.categories.filter(c => c.name.toLowerCase().includes(s));
+  }
+
+  applyFilter(event: Event): void {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
   }
 
   loadProducts(): void {
     this.loadingProducts = true;
     this.api.getProducts().subscribe({
       next: (data) => {
-        this.products = data;
+        this.dataSource.data = data;
         this.loadingProducts = false;
       },
       error: () => (this.loadingProducts = false),
@@ -81,7 +138,7 @@ export class ProductComponent implements OnInit {
         this.loadingInputs = false;
       },
       error: (err) => {
-        this.error = err.error?.message || 'Failed to load parameters for category';
+        this.snackBar.open(err.error?.message || 'Failed to load parameters for category', 'Close', { duration: 3000 });
         this.loadingInputs = false;
       },
     });
@@ -94,11 +151,11 @@ export class ProductComponent implements OnInit {
 
   submit(): void {
     if (!this.productName.trim()) {
-      this.error = 'Product name is required';
+      this.snackBar.open('Product name is required', 'Close', { duration: 3000 });
       return;
     }
     if (!this.selectedCategoryId) {
-      this.error = 'Please select a category';
+      this.snackBar.open('Please select a category', 'Close', { duration: 3000 });
       return;
     }
 
@@ -107,19 +164,18 @@ export class ProductComponent implements OnInit {
     for (const v of this.inputVariables) {
       const val = this.inputValues[v];
       if (val === '' || val === null || val === undefined) {
-        this.error = `Please provide a value for "${this.getInputLabel(v)}"`;
+        this.snackBar.open(`Please provide a value for "${this.getInputLabel(v)}"`, 'Close', { duration: 3000 });
         return;
       }
       const num = parseFloat(val);
       if (isNaN(num)) {
-        this.error = `"${this.getInputLabel(v)}" must be a valid number`;
+        this.snackBar.open(`"${this.getInputLabel(v)}" must be a valid number`, 'Close', { duration: 3000 });
         return;
       }
       numericInputs[v] = num;
     }
 
     this.submitting = true;
-    this.error = '';
     this.lastResult = null;
 
     this.api
@@ -131,16 +187,66 @@ export class ProductComponent implements OnInit {
       .subscribe({
         next: (result) => {
           this.lastResult = result;
-          this.success = `✓ "${result.product.name}" calculated successfully!`;
+          this.snackBar.open(`✓ "${result.product.name}" calculated successfully!`, 'Close', { duration: 5000 });
           this.submitting = false;
           this.loadProducts();
-          setTimeout(() => (this.success = ''), 5000);
         },
         error: (err) => {
-          this.error = err.error?.message || 'Calculation failed';
+          this.snackBar.open(err.error?.message || 'Calculation failed', 'Close', { duration: 3000 });
           this.submitting = false;
         },
       });
+  }
+
+  getGroupedResults(): { header: string; parameters: { name: string; key: string; value: number; unit: string }[] }[] {
+    if (!this.lastResult || !this.lastResult.product.calculated) return [];
+
+    const calculated = this.lastResult.product.calculated;
+    const groups: Record<string, { header: string; parameters: { name: string; key: string; value: number; unit: string }[] }> = {};
+
+    // Use categoryParameters or create a map for lookup
+    const paramMap: Record<string, Parameter> = {};
+    this.categoryParameters.forEach(p => paramMap[p.key] = p);
+
+    Object.entries(calculated).forEach(([key, value]) => {
+      const p = paramMap[key];
+      const headerObj = (p?.headerInfoId as any);
+      const headerName = headerObj?.name || 'Other Calculations';
+      const headerId = headerObj?._id || 'other';
+
+      if (!groups[headerId]) {
+        groups[headerId] = { header: headerName, parameters: [] };
+      }
+      
+      groups[headerId].parameters.push({
+        name: p?.name || key,
+        key: key,
+        value: value,
+        unit: (p?.unit as any)?.symbol || ''
+      });
+    });
+
+    return Object.values(groups);
+  }
+
+  getGroupedInputs(): { header: string; parameters: Parameter[] }[] {
+    const groups: Record<string, { header: string; parameters: Parameter[] }> = {};
+
+    // Map input keys to their full parameter objects
+    const inputParams = this.categoryParameters.filter(p => this.inputVariables.includes(p.key));
+
+    inputParams.forEach(p => {
+      const headerObj = (p.headerInfoId as any);
+      const headerName = headerObj?.name || 'Other Inputs';
+      const headerId = headerObj?._id || 'other';
+
+      if (!groups[headerId]) {
+        groups[headerId] = { header: headerName, parameters: [] };
+      }
+      groups[headerId].parameters.push(p);
+    });
+
+    return Object.values(groups);
   }
 
   getCalculatedEntries(calculated: Record<string, number>): { key: string; value: number }[] {
@@ -161,11 +267,49 @@ export class ProductComponent implements OnInit {
     if (!confirm(`Delete product "${name}"?`)) return;
     this.api.deleteProduct(id).subscribe({
       next: () => {
-        this.success = 'Product deleted';
+        this.snackBar.open('Product deleted', 'Close', { duration: 3000 });
         this.loadProducts();
-        setTimeout(() => (this.success = ''), 3000);
       },
-      error: (err) => (this.error = err.error?.message || 'Failed to delete'),
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Failed to delete', 'Close', { duration: 3000 });
+      },
+    });
+  }
+
+  editProduct(product: Product): void {
+    this.productName = product.name;
+    this.selectedCategoryId = (product.categoryId as any)._id || product.categoryId;
+    
+    this.loadingInputs = true;
+    this.error = '';
+    this.lastResult = null;
+    this.inputValues = {};
+
+    // Fetch the inputs (now loads global inputs)
+    this.api.getInputVariables(this.selectedCategoryId).subscribe({
+      next: (result) => {
+        this.inputVariables = result.inputVariables;
+        this.categoryParameters = result.parameters;
+        
+        // Populate inputs with existing product data or empty string
+        const init: Record<string, string> = {};
+        for (const v of result.inputVariables) {
+          if (product.inputs && product.inputs[v] !== undefined) {
+            init[v] = product.inputs[v].toString();
+          } else {
+            init[v] = '';
+          }
+        }
+        this.inputValues = init;
+        this.loadingInputs = false;
+        
+        // Scroll to form smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Failed to load parameters', 'Close', { duration: 3000 });
+        this.loadingInputs = false;
+      },
     });
   }
 

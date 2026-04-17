@@ -13,6 +13,14 @@ export interface Unit {
   updatedAt?: string;
 }
 
+export interface HeaderInfo {
+  _id: string;
+  name: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Parameter {
   _id: string;
   name: string;
@@ -20,6 +28,7 @@ export interface Parameter {
   type?: 'input' | 'formula';
   formula: string;
   unit?: Unit | null;
+  headerInfoId?: HeaderInfo | null;
   categoryId?: Category | null;
   createdAt?: string;
   updatedAt?: string;

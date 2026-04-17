@@ -1,28 +1,77 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject, switchMap } from 'rxjs';
 import { ApiService } from '../../services/api.service';
-import { Parameter, Category, Unit } from '../../models/interfaces';
+import { Parameter, Category, Unit, HeaderInfo } from '../../models/interfaces';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatCardModule } from '@angular/material/card';
+import { MatSelectModule } from '@angular/material/select';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 
 @Component({
   selector: 'app-parameter',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatButtonModule,
+    MatIconModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatCardModule,
+    MatSnackBarModule,
+    MatSelectModule,
+    MatRadioModule,
+    MatTooltipModule,
+    NgxMatSelectSearchModule
+  ],
   templateUrl: './parameter.component.html',
   styleUrl: './parameter.component.css',
 })
 export class ParameterComponent implements OnInit {
-  parameters: Parameter[] = [];
+  dataSource = new MatTableDataSource<Parameter>([]);
+  displayedColumns: string[] = ['name', 'key', 'type', 'formula', 'unit', 'headerInfoId', 'categoryId', 'actions'];
+
+  @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
+    this.dataSource.paginator = mp;
+  }
+  @ViewChild(MatSort) set matSort(ms: MatSort) {
+    this.dataSource.sort = ms;
+  }
+
   categories: Category[] = [];
   units: Unit[] = [];
+  headerInfos: HeaderInfo[] = [];
+
+  // Filtered lists for searchable selects
+  filteredCategories: Category[] = [];
+  filteredUnits: Unit[] = [];
+  filteredHeaderInfos: HeaderInfo[] = [];
+
+  catSearch = '';
+  unitSearch = '';
+  headerSearch = '';
 
   loading = false;
   formVisible = false;
   editMode = false;
   saving = false;
-  error = '';
-  success = '';
+
+  constructor(private api: ApiService, private snackBar: MatSnackBar) {}
 
   form: {
     name: string;
@@ -30,6 +79,7 @@ export class ParameterComponent implements OnInit {
     type: 'input' | 'formula';
     formula: string;
     unitId: string;
+    headerInfoId: string;
     categoryId: string;
   } = {
     name: '',
@@ -37,6 +87,7 @@ export class ParameterComponent implements OnInit {
     type: 'formula',
     formula: '',
     unitId: '',
+    headerInfoId: '',
     categoryId: '',
   };
   editId = '';
@@ -49,8 +100,6 @@ export class ParameterComponent implements OnInit {
 
   private formulaInput$ = new Subject<string>();
 
-  constructor(private api: ApiService) {}
-
   ngOnInit(): void {
     this.load();
     this.loadMeta();
@@ -61,19 +110,47 @@ export class ParameterComponent implements OnInit {
     this.loading = true;
     this.api.getParameters().subscribe({
       next: (data) => {
-        this.parameters = data;
+        this.dataSource.data = data;
         this.loading = false;
       },
       error: (err) => {
-        this.error = err.error?.message || 'Failed to load parameters';
+        this.snackBar.open(err.error?.message || 'Failed to load parameters', 'Close', { duration: 3000 });
         this.loading = false;
       },
     });
   }
 
+  applyFilter(event: Event): void {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+
+    if (this.dataSource.paginator) {
+      this.dataSource.paginator.firstPage();
+    }
+  }
+
   loadMeta(): void {
-    this.api.getCategories().subscribe((cats) => (this.categories = cats));
-    this.api.getUnits().subscribe((units) => (this.units = units));
+    this.api.getCategories().subscribe((cats) => { this.categories = cats; this.filterCategories(); });
+    this.api.getUnits().subscribe((units) => { this.units = units; this.filterUnits(); });
+    this.api.getHeaderInfos().subscribe((infos) => { this.headerInfos = infos; this.filterHeaderInfos(); });
+  }
+
+  filterCategories(): void {
+    if (!this.catSearch) { this.filteredCategories = [...this.categories]; return; }
+    const s = this.catSearch.toLowerCase();
+    this.filteredCategories = this.categories.filter(c => c.name.toLowerCase().includes(s));
+  }
+
+  filterUnits(): void {
+    if (!this.unitSearch) { this.filteredUnits = [...this.units]; return; }
+    const s = this.unitSearch.toLowerCase();
+    this.filteredUnits = this.units.filter(u => u.name.toLowerCase().includes(s) || u.symbol.toLowerCase().includes(s));
+  }
+
+  filterHeaderInfos(): void {
+    if (!this.headerSearch) { this.filteredHeaderInfos = [...this.headerInfos]; return; }
+    const s = this.headerSearch.toLowerCase();
+    this.filteredHeaderInfos = this.headerInfos.filter(h => h.name.toLowerCase().includes(s));
   }
 
   setupFormulaValidation(): void {
@@ -115,12 +192,10 @@ export class ParameterComponent implements OnInit {
   openCreate(): void {
     this.editMode = false;
     this.editId = '';
-    this.form = { name: '', key: '', type: 'formula', formula: '', unitId: '', categoryId: '' };
+    this.form = { name: '', key: '', type: 'formula', formula: '', unitId: '', headerInfoId: '', categoryId: '' };
     this.formulaValid = null;
     this.extractedVars = [];
     this.formulaError = '';
-    this.error = '';
-    this.success = '';
     this.formVisible = true;
   }
 
@@ -133,41 +208,39 @@ export class ParameterComponent implements OnInit {
       type: param.type || 'formula',
       formula: param.formula,
       unitId: (param.unit as any)?._id || '',
+      headerInfoId: (param.headerInfoId as any)?._id || '',
       categoryId: (param.categoryId as any)?._id || '',
     };
     this.formulaValid = null;
     this.extractedVars = [];
     this.formulaError = '';
-    this.error = '';
-    this.success = '';
     this.formVisible = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     // Trigger validation for the existing formula
     this.onFormulaChange(param.formula);
   }
 
   closeForm(): void {
     this.formVisible = false;
-    this.error = '';
   }
 
   save(): void {
     if (!this.form.name.trim() || !this.form.key.trim()) {
-      this.error = 'Name and Key are required';
+      this.snackBar.open('Name and Key are required', 'Close', { duration: 3000 });
       return;
     }
     if (this.form.type === 'formula') {
       if (!this.form.formula.trim()) {
-        this.error = 'Formula is required for Calculated Parameters';
+        this.snackBar.open('Formula is required for Calculated Parameters', 'Close', { duration: 3000 });
         return;
       }
       if (this.formulaValid === false) {
-        this.error = 'Please fix the formula error before saving';
+        this.snackBar.open('Please fix the formula error before saving', 'Close', { duration: 3000 });
         return;
       }
     }
     
     this.saving = true;
-    this.error = '';
 
     const payload: any = {
       name: this.form.name,
@@ -175,6 +248,7 @@ export class ParameterComponent implements OnInit {
       type: this.form.type,
       formula: this.form.type === 'formula' ? this.form.formula : '',
       unit: this.form.unitId || null,
+      headerInfoId: this.form.headerInfoId || null,
       categoryId: this.form.categoryId || null,
     };
 
@@ -185,13 +259,12 @@ export class ParameterComponent implements OnInit {
     req.subscribe({
       next: () => {
         this.saving = false;
-        this.success = this.editMode ? 'Parameter updated!' : 'Parameter created!';
+        this.snackBar.open(this.editMode ? 'Parameter updated!' : 'Parameter created!', 'Close', { duration: 3000 });
         this.formVisible = false;
         this.load();
-        setTimeout(() => (this.success = ''), 3000);
       },
       error: (err) => {
-        this.error = err.error?.message || 'Failed to save';
+        this.snackBar.open(err.error?.message || 'Failed to save', 'Close', { duration: 3000 });
         this.saving = false;
       },
     });
@@ -201,11 +274,12 @@ export class ParameterComponent implements OnInit {
     if (!confirm(`Delete parameter "${name}"?`)) return;
     this.api.deleteParameter(id).subscribe({
       next: () => {
-        this.success = 'Parameter deleted';
+        this.snackBar.open('Parameter deleted', 'Close', { duration: 3000 });
         this.load();
-        setTimeout(() => (this.success = ''), 3000);
       },
-      error: (err) => (this.error = err.error?.message || 'Failed to delete'),
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Failed to delete', 'Close', { duration: 3000 });
+      },
     });
   }
 
@@ -217,5 +291,10 @@ export class ParameterComponent implements OnInit {
   getUnitSymbol(param: Parameter): string {
     if (!param.unit) return '—';
     return (param.unit as any).symbol || '—';
+  }
+
+  getHeaderInfoName(param: Parameter): string {
+    if (!param.headerInfoId) return '—';
+    return (param.headerInfoId as any).name || '—';
   }
 }

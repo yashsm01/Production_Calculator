@@ -9,6 +9,7 @@ import {
   FormulaValidationResult,
   EngineResult,
   InputVariablesResult,
+  HeaderInfo,
 } from '../models/interfaces';
 
 const BASE = '/api';
@@ -29,6 +30,20 @@ export class ApiService {
   }
   deleteCategory(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${BASE}/category/${id}`);
+  }
+
+  // ── Header Info ────────────────────────────────────────────────────────────
+  getHeaderInfos(): Observable<HeaderInfo[]> {
+    return this.http.get<HeaderInfo[]>(`${BASE}/header-info`);
+  }
+  createHeaderInfo(data: { name: string; description?: string }): Observable<HeaderInfo> {
+    return this.http.post<HeaderInfo>(`${BASE}/header-info`, data);
+  }
+  updateHeaderInfo(id: string, data: { name: string; description?: string }): Observable<HeaderInfo> {
+    return this.http.put<HeaderInfo>(`${BASE}/header-info/${id}`, data);
+  }
+  deleteHeaderInfo(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${BASE}/header-info/${id}`);
   }
 
   // ── Unit ─────────────────────────────────────────────────────────────────

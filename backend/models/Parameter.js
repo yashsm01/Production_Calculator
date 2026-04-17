@@ -30,6 +30,11 @@ const parameterSchema = new mongoose.Schema(
       ref: 'Unit',
       default: null,
     },
+    headerInfoId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'HeaderInfo',
+      default: null,
+    },
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',

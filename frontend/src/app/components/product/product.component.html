@@ -1,258 +1,190 @@
 <div class="page-content">
-  <div class="page-header">
-    <div>
-      <h1>Products</h1>
-      <div class="subtitle">Select a category, fill inputs, and let the engine calculate everything</div>
-    </div>
+  <div class="page-header" style="margin-bottom:24px;">
+    <h1 style="margin:0; font-weight:500;">Run Engine</h1>
+    <div class="subtitle" style="color:var(--text-muted);">Calculate a new product pricing or config</div>
   </div>
 
-  @if (success) {
-    <div class="alert alert-success">{{ success }}</div>
-  }
-  @if (error) {
-    <div class="alert alert-error">⚠ {{ error }}</div>
-  }
+  <div class="form-row" style="align-items: flex-start;">
+    <!-- LEFT PANEL: Calculator Form -->
+    <div style="flex: 1 1 600px; min-width: 0;">
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Product Configurator</mat-card-title>
+        </mat-card-header>
+        <mat-card-content style="padding-top:16px;">
+          
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="form-field-full">
+              <mat-label>Product Name</mat-label>
+              <input matInput [(ngModel)]="productName" placeholder="e.g. Acme Widget 2024">
+            </mat-form-field>
 
-  <!-- Main layout: calculator on left, products list on right -->
-  <div style="display:grid; grid-template-columns:420px 1fr; gap:1.5rem; align-items:start">
-
-    <!-- ── CALCULATOR FORM ──────────────────────────────────────────────── -->
-    <div>
-      <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem">
-          <h2 style="font-size:1rem; font-weight:600; color:var(--text)">⚙️ New Calculation</h2>
-          @if (selectedCategoryId) {
-            <button class="btn btn-ghost" style="padding:0.3rem 0.7rem; font-size:0.78rem" (click)="resetForm()">Reset</button>
-          }
-        </div>
-
-        <!-- Product Name -->
-        <div class="form-group">
-          <label for="prod-name">Product Name</label>
-          <input id="prod-name" class="form-input" [(ngModel)]="productName"
-            placeholder="e.g. Beam A, Slab Type 1" />
-        </div>
-
-        <!-- Category Selector -->
-        <div class="form-group">
-          <label for="prod-cat">Category</label>
-          <select id="prod-cat" class="form-input" [(ngModel)]="selectedCategoryId"
-            (ngModelChange)="onCategoryChange()">
-            <option value="">— Select a category —</option>
-            @for (cat of categories; track cat._id) {
-              <option [value]="cat._id">{{ cat.name }}</option>
-            }
-          </select>
-        </div>
-
-        <!-- Loading inputs -->
-        @if (loadingInputs) {
-          <div class="loading-overlay" style="padding:1rem">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
-            Loading parameters…
-          </div>
-        }
-
-        @if (!loadingInputs && selectedCategoryId) {
-          <!-- Dynamic Input Fields -->
-          @if (inputVariables.length > 0) {
-            <div style="border-top:1px solid var(--border); margin:1rem 0; padding-top:1rem">
-              <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                Input Variables ({{ inputVariables.length }})
-              </div>
-
-              @for (varName of inputVariables; track varName) {
-                <div class="form-group">
-                  <label [for]="'inp-' + varName">
-                    {{ getInputLabel(varName) }}
-                    <code style="font-family:monospace; font-size:0.7rem; color:var(--accent-2); background:var(--accent-glow); padding:0.1rem 0.35rem; border-radius:4px; margin-left:0.35rem">{{ varName }}</code>
-                  </label>
-                  <input
-                    [id]="'inp-' + varName"
-                    type="number"
-                    class="form-input"
-                    [(ngModel)]="inputValues[varName]"
-                    [placeholder]="'Enter ' + getInputLabel(varName)"
-                    step="any"
-                  />
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Dependency Chain (mini visualization) -->
-          @if (categoryParameters.length > 0) {
-            <details style="margin-bottom:1rem">
-              <summary style="font-size:0.78rem; color:var(--text-muted); cursor:pointer; user-select:none; margin-bottom:0.5rem">
-                🔗 Formula dependency chain ({{ categoryParameters.length }} parameters)
-              </summary>
-              <div style="margin-top:0.75rem; display:flex; flex-direction:column; gap:0.4rem">
-                @for (param of categoryParameters; track param._id) {
-                  <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.78rem">
-                    <code style="color:var(--accent-2); font-family:monospace; background:rgba(108,99,255,0.08); padding:0.15rem 0.4rem; border-radius:4px; min-width:90px">{{ param.key }}</code>
-                    <span style="color:var(--text-muted)">=</span>
-                    @if (param.type === 'input') {
-                      <span class="badge badge-muted" style="border: 1px dashed var(--text-muted); font-size: 0.65rem">(User Input)</span>
-                    } @else {
-                      <code style="color:var(--text-muted); font-family:monospace">{{ param.formula || '(Input Fallback)' }}</code>
-                    }
-                  </div>
+            <mat-form-field appearance="outline" class="form-field-full">
+              <mat-label>Select Parent Category</mat-label>
+              <mat-select [(ngModel)]="selectedCategoryId" (selectionChange)="onCategoryChange()">
+                <mat-option>
+                  <ngx-mat-select-search [(ngModel)]="catSearch" (ngModelChange)="filterCategories()" placeholderLabel="Search categories..."></ngx-mat-select-search>
+                </mat-option>
+                <mat-option value="">— Select Category —</mat-option>
+                @for (cat of filteredCategories; track cat._id) {
+                  <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
                 }
-              </div>
-            </details>
-          }
-
-          @if (categoryParameters.length > 0) {
-            <button
-              class="btn btn-primary"
-              style="width:100%; justify-content:center; padding:0.75rem"
-              (click)="submit()"
-              [disabled]="submitting"
-            >
-              @if (submitting) {
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
-                Calculating…
-              } @else {
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
-                Run Calculation
-              }
-            </button>
-          } @else {
-            <div class="alert alert-info" style="margin-top:1rem">
-              No parameters defined for this category. Please add parameters first.
-            </div>
-          }
-        }
-      </div>
-
-      <!-- ── CALCULATION RESULTS ──────────────────────────────────────── -->
-      @if (lastResult) {
-        <div class="card" style="margin-top:1.5rem; animation:slideIn 0.3s ease">
-          <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1.25rem">
-            <h2 style="font-size:1rem; font-weight:600; color:var(--text)">📊 Calculation Steps</h2>
-            <span class="badge badge-accent">{{ lastResult.product.name }}</span>
+              </mat-select>
+            </mat-form-field>
           </div>
 
-          <!-- Vertical Step-by-Step display -->
-          <div style="display:flex; flex-direction:column; gap:1rem; padding-left:0.5rem; border-left:2px solid var(--border)">
+          <mat-divider style="margin: 16px 0;"></mat-divider>
+
+          @if (loadingInputs) {
+            <div style="padding: 24px; text-align: center; color: var(--text-muted);">
+              <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon>
+              <p>Loading inputs...</p>
+            </div>
+          } @else if (inputVariables.length > 0) {
+            <h3 style="margin-top:0; margin-bottom:16px; font-weight:500;">Required Inputs</h3>
             
-            <!-- Inputs Step -->
-            <div style="position:relative; padding-left:1.5rem">
-              <div style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--text-muted); border:2px solid var(--bg-card)"></div>
-              <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.6rem">Step 1: Provided Inputs</div>
-              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:0.5rem">
-                @for (entry of getInputEntries(lastResult.product.inputs); track entry.key) {
-                  <div style="background:var(--bg-surface); border-radius:8px; padding:0.5rem 0.75rem; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border)">
-                    <code style="font-size:0.75rem; color:var(--text-muted); font-family:monospace">{{ entry.key }}</code>
-                    <span style="font-weight:600; font-size:0.9rem">{{ formatNumber(entry.value) }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Calculation Steps -->
-            @for (key of lastResult.evaluationOrder; track key; let i = $index) {
-              <div style="position:relative; padding-left:1.5rem">
-                <div style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--accent); border:2px solid var(--bg-card)"></div>
-                <div style="font-size:0.75rem; font-weight:600; color:var(--accent-2); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.4rem">
-                  Step {{ i + 2 }}: Calculate {{ key }}
-                </div>
-                <div class="result-card" style="margin-top:0; border-color:rgba(108,99,255,0.3); background:rgba(108,99,255,0.05); text-align:left; display:flex; justify-content:space-between; align-items:center">
-                  <div>
-                    <div class="result-key" style="margin-bottom:0">{{ key }}</div>
-                  </div>
-                  <div class="result-value" style="font-size:1.25rem">{{ formatNumber(lastResult.product.calculated[key]) }}</div>
+            @for (group of getGroupedInputs(); track group.header) {
+              <div style="margin-bottom: 24px;">
+                <h4 style="margin: 0 0 12px 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+                  {{ group.header }}
+                </h4>
+                <div class="form-row">
+                  @for (p of group.parameters; track p.key) {
+                    <mat-form-field appearance="outline" class="form-field-half">
+                      <mat-label>{{ p.name }} ({{ p.key }})</mat-label>
+                      <input matInput type="number" [(ngModel)]="inputValues[p.key]">
+                      @if (p.unit) {
+                        <span matSuffix style="padding-right: 8px; color: #94a3b8; font-size: 0.9em;">
+                          {{ p.unit.symbol }}
+                        </span>
+                      }
+                    </mat-form-field>
+                  }
                 </div>
               </div>
             }
 
-            <div style="position:relative; padding-left:1.5rem">
-              <div style="position:absolute; left:-7px; top:4px; width:12px; height:12px; border-radius:50%; background:var(--success); border:2px solid var(--bg-card)"></div>
-              <div style="font-size:0.75rem; font-weight:600; color:var(--success); text-transform:uppercase; letter-spacing:0.05em">Calculation Complete ✨</div>
+            <div style="margin-top: 16px; display:flex; gap: 16px;">
+              <button mat-flat-button color="primary" (click)="submit()" [disabled]="submitting" style="flex:1;">
+                {{ submitting ? 'Calculating Engine...' : 'Run Calculator' }}
+              </button>
+              <button mat-button (click)="resetForm()">Reset</button>
             </div>
-          </div>
-        </div>
-      }
+          } @else if (selectedCategoryId) {
+            <div style="padding: 24px; text-align: center; color: var(--text-muted);">
+              <mat-icon style="font-size:32px; height:32px; width:32px; color:#94a3b8; margin-bottom:8px;">check_circle</mat-icon>
+              <p style="margin:0;">No inputs required. Form is ready to validate.</p>
+              <button mat-flat-button color="primary" (click)="submit()" [disabled]="submitting" style="margin-top: 16px; width:100%;">
+                {{ submitting ? 'Calculating...' : 'Run Calculator' }}
+              </button>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
     </div>
 
-    <!-- ── PRODUCTS LIST ────────────────────────────────────────────────── -->
-    <div class="card" style="padding:0; overflow:hidden">
-      <div style="padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between">
-        <h3 style="font-size:1rem; font-weight:600">
-          📦 Saved Products
-          @if (products.length > 0) {
-            <span class="badge badge-muted" style="margin-left:0.5rem">{{ products.length }}</span>
-          }
-        </h3>
+    <!-- RIGHT PANEL: Result -->
+    @if (lastResult) {
+      <div style="flex: 1 1 400px; min-width: 0;">
+        <mat-card appearance="outlined" style="background:#f0fdff; border-color:#00B4D8;">
+          <mat-card-header>
+            <mat-card-title>Engine Result</mat-card-title>
+          </mat-card-header>
+          <mat-card-content style="padding-top:16px;">
+            <p><strong>Config:</strong> {{ lastResult.product.name }}</p>
+            <mat-divider style="margin: 16px 0;"></mat-divider>
+            
+            @for (group of getGroupedResults(); track group.header) {
+              <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 8px 0; color: #0077b6; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(0,180,216,0.2); padding-bottom: 4px;">
+                  {{ group.header }}
+                </h4>
+                <table style="width:100%; border-collapse: collapse;">
+                  @for (param of group.parameters; track param.key) {
+                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.03);">
+                      <td style="padding: 6px 0;">
+                        <div style="font-weight:500; font-size:0.9rem;">{{ param.name }}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">{{ param.key }}</div>
+                      </td>
+                      <td style="padding: 6px 0; text-align:right; font-family:monospace; font-size:1.05rem; color:var(--primary); font-weight: 500;">
+                        {{ formatNumber(param.value) }} <span style="font-size:0.85rem; color:var(--text-muted); font-weight:400; margin-left:4px;">{{ param.unit }}</span>
+                      </td>
+                    </tr>
+                  }
+                </table>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    }
+  </div>
+
+  <mat-divider style="margin: 40px 0;"></mat-divider>
+
+  <!-- SAVED PRODUCTS TABLE -->
+  <div style="margin-bottom: 24px;">
+    <h2 style="margin:0; font-weight:500;">Saved Products</h2>
+    <p style="color:var(--text-muted); margin:0;">View and manage previously calculated products</p>
+  </div>
+
+  <mat-card appearance="outlined" style="padding:0;">
+    <div style="padding: 16px 24px; border-bottom: 1px solid var(--border);">
+      <mat-form-field appearance="outline" style="width:100%; max-width:400px; margin-bottom:-1.25em;">
+        <mat-label>Search Products</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput (keyup)="applyFilter($event)" placeholder="Search by name...">
+      </mat-form-field>
+    </div>
+
+    @if (loadingProducts) {
+      <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+        <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon>
+        <p>Loading products...</p>
+      </div>
+    } @else {
+      <div style="overflow-x: auto;">
+        <table mat-table [dataSource]="dataSource" matSort style="width: 100%;">
+          
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Product Name </th>
+            <td mat-cell *matCellDef="let element" style="font-weight: 500;"> {{element.name}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Category </th>
+            <td mat-cell *matCellDef="let element"> {{ element.categoryId?.name || '—' }} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header> Calculated On </th>
+            <td mat-cell *matCellDef="let element" style="color:var(--text-muted);"> {{element.createdAt | date:'short'}} </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef style="text-align: right;"> Actions </th>
+            <td mat-cell *matCellDef="let element" style="text-align: right;">
+              <button mat-flat-button color="accent" (click)="editProduct(element)" style="margin-right: 8px;">
+                Edit
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteProduct(element._id, element.name)" title="Delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" colspan="4" style="padding: 24px; text-align: center; color: var(--text-muted);">
+              No products match your search.
+            </td>
+          </tr>
+        </table>
       </div>
 
-      @if (loadingProducts) {
-        <div class="loading-overlay">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>
-          Loading…
-        </div>
-      } @else if (products.length === 0) {
-        <div class="empty-state">
-          <div class="empty-icon">📦</div>
-          <p>No products calculated yet.<br>Use the form to run your first calculation.</p>
-        </div>
-      } @else {
-        <div style="display:flex; flex-direction:column; gap:0">
-          @for (product of products; track product._id) {
-            <div style="padding:1rem 1.5rem; border-bottom:1px solid var(--border); transition:background 0.15s" class="product-row">
-              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem">
-                <div style="flex:1; min-width:0">
-                  <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem">
-                    <span style="font-weight:600; font-size:0.95rem">{{ product.name }}</span>
-                    <span class="badge badge-success" style="font-size:0.7rem">{{ product.categoryId.name }}</span>
-                  </div>
-
-                  <!-- Input chips -->
-                  <div style="display:flex; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.5rem">
-                    @for (entry of getInputEntries(product.inputs); track entry.key) {
-                      <span style="font-size:0.7rem; background:var(--bg-surface); border:1px solid var(--border); border-radius:6px; padding:0.15rem 0.5rem; color:var(--text-muted)">
-                        <code style="font-family:monospace">{{ entry.key }}</code>=<b style="color:var(--text)">{{ formatNumber(entry.value) }}</b>
-                      </span>
-                    }
-                  </div>
-
-                  <!-- Calculated result chips -->
-                  <div style="display:flex; flex-wrap:wrap; gap:0.3rem">
-                    @for (entry of getCalculatedEntries(product.calculated); track entry.key) {
-                      <span style="font-size:0.72rem; background:var(--accent-glow); border:1px solid rgba(108,99,255,0.3); border-radius:6px; padding:0.15rem 0.5rem; color:var(--accent-2)">
-                        <code style="font-family:monospace">{{ entry.key }}</code>=<b>{{ formatNumber(entry.value) }}</b>
-                      </span>
-                    }
-                  </div>
-                </div>
-
-                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem; flex-shrink:0">
-                  <span style="font-size:0.72rem; color:var(--text-muted)">{{ product.createdAt | date:'short' }}</span>
-                  <button class="btn btn-danger" style="padding:0.3rem 0.65rem; font-size:0.75rem"
-                    (click)="deleteProduct(product._id, product.name)">Delete</button>
-                </div>
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  </div>
+      <mat-paginator [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons></mat-paginator>
+    }
+  </mat-card>
 </div>
-
-<style>
-@keyframes slideIn {
-  from { opacity:0; transform:translateY(-8px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-.product-row:hover { background: var(--bg-surface); }
-@media(max-width:900px){
-  div[style*="grid-template-columns:420px"] {
-    grid-template-columns: 1fr !important;
-  }
-}
-</style>

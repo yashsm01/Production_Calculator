@@ -9,6 +9,7 @@ exports.getAll = async (req, res, next) => {
     if (req.query.categoryId) filter.categoryId = req.query.categoryId;
     const parameters = await Parameter.find(filter)
       .populate('unit', 'name symbol')
+      .populate('headerInfoId', 'name')
       .populate('categoryId', 'name')
       .sort({ createdAt: -1 });
     res.json(parameters);
@@ -22,6 +23,7 @@ exports.getById = async (req, res, next) => {
   try {
     const parameter = await Parameter.findById(req.params.id)
       .populate('unit', 'name symbol')
+      .populate('headerInfoId', 'name')
       .populate('categoryId', 'name');
     if (!parameter) return res.status(404).json({ message: 'Parameter not found' });
     res.json(parameter);
@@ -33,7 +35,7 @@ exports.getById = async (req, res, next) => {
 // POST /api/parameter
 exports.create = async (req, res, next) => {
   try {
-    let { name, key, type, formula, unit, categoryId } = req.body;
+    let { name, key, type, formula, unit, headerInfoId, categoryId } = req.body;
 
     type = type || 'formula';
     if (type === 'input') {
@@ -54,6 +56,7 @@ exports.create = async (req, res, next) => {
       type,
       formula,
       unit: unit || null,
+      headerInfoId: headerInfoId || null,
       categoryId: categoryId || null,
     });
 
@@ -66,7 +69,7 @@ exports.create = async (req, res, next) => {
 // PUT /api/parameter/:id
 exports.update = async (req, res, next) => {
   try {
-    let { name, key, type, formula, unit, categoryId } = req.body;
+    let { name, key, type, formula, unit, headerInfoId, categoryId } = req.body;
 
     type = type || 'formula';
     if (type === 'input') {
@@ -88,10 +91,11 @@ exports.update = async (req, res, next) => {
 
     const parameter = await Parameter.findByIdAndUpdate(
       req.params.id,
-      { name, key: key ? key.toLowerCase() : undefined, type, formula, unit: unit || null, categoryId: categoryId || null },
+      { name, key: key ? key.toLowerCase() : undefined, type, formula, unit: unit || null, headerInfoId: headerInfoId || null, categoryId: categoryId || null },
       { new: true, runValidators: true }
     )
       .populate('unit', 'name symbol')
+      .populate('headerInfoId', 'name')
       .populate('categoryId', 'name');
 
     if (!parameter) return res.status(404).json({ message: 'Parameter not found' });
@@ -130,12 +134,13 @@ exports.validateFormulaEndpoint = async (req, res, next) => {
   }
 };
 
-// GET /api/parameter/inputs?categoryId=xxx — return required input variables for a category
+// GET /api/parameter/inputs — return required input variables globally
 exports.getInputVariables = async (req, res, next) => {
   try {
-    const { categoryId } = req.query;
-    const filter = categoryId ? { categoryId } : {};
-    const parameters = await Parameter.find(filter).select('key formula');
+    const parameters = await Parameter.find()
+      .select('key formula type name headerInfoId unit')
+      .populate('headerInfoId', 'name')
+      .populate('unit', 'name symbol');
 
     const inputVars = collectAllInputVariables(parameters);
     res.json({ inputVariables: inputVars, parameters });

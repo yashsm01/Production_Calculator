@@ -7,6 +7,7 @@ const categoryRoutes = require('./routes/category');
 const unitRoutes = require('./routes/unit');
 const parameterRoutes = require('./routes/parameter');
 const productRoutes = require('./routes/product');
+const headerInfoRoutes = require('./routes/headerInfo');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -20,6 +21,7 @@ app.use('/api/category', categoryRoutes);
 app.use('/api/unit', unitRoutes);
 app.use('/api/parameter', parameterRoutes);
 app.use('/api/product', productRoutes);
+app.use('/api/header-info', headerInfoRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

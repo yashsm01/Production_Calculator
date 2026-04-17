@@ -11,12 +11,12 @@ exports.create = async (req, res, next) => {
       return res.status(400).json({ message: 'name, categoryId, and inputs are required' });
     }
 
-    // Load parameters for this category
-    const parameters = await Parameter.find({ categoryId }).select('key formula name');
+    // Load ALL parameters globally (category is just for UI filtering)
+    const parameters = await Parameter.find({}).select('key formula name type');
 
     if (parameters.length === 0) {
       return res.status(400).json({
-        message: 'No parameters found for this category. Please define parameters first.',
+        message: 'No parameters found in the system. Please define parameters first.',
       });
     }
 
@@ -30,12 +30,12 @@ exports.create = async (req, res, next) => {
       calculated[key] = scope[key];
     }
 
-    const product = await Product.create({
-      name,
-      categoryId,
-      inputs,
-      calculated,
-    });
+    // Upsert: Find by name. If exists, update it. If not, create it.
+    const product = await Product.findOneAndUpdate(
+      { name },
+      { categoryId, inputs, calculated },
+      { new: true, upsert: true, runValidators: true }
+    );
 
     await product.populate('categoryId', 'name');
 

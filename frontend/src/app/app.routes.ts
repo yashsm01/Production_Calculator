@@ -22,4 +22,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/product/product.component').then((m) => m.ProductComponent),
   },
+  {
+    path: 'header-info',
+    loadComponent: () =>
+      import('./components/header-info/header-info.component').then((m) => m.HeaderInfoComponent),
+  },
 ];

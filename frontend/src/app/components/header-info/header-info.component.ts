@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { Category } from '../../models/interfaces';
+import { HeaderInfo } from '../../models/interfaces';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -14,7 +14,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCardModule } from '@angular/material/card';
 
 @Component({
-  selector: 'app-category',
+  selector: 'app-header-info',
   standalone: true,
   imports: [
     CommonModule,
@@ -29,12 +29,11 @@ import { MatCardModule } from '@angular/material/card';
     MatCardModule,
     MatSnackBarModule,
   ],
-  templateUrl: './category.component.html',
-  styleUrl: './category.component.css',
+  templateUrl: './header-info.component.html',
 })
-export class CategoryComponent implements OnInit {
-  dataSource = new MatTableDataSource<Category>([]);
-  displayedColumns: string[] = ['name', 'createdAt', 'actions'];
+export class HeaderInfoComponent implements OnInit {
+  dataSource = new MatTableDataSource<HeaderInfo>([]);
+  displayedColumns: string[] = ['name', 'description', 'actions'];
 
   @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
     this.dataSource.paginator = mp;
@@ -48,7 +47,7 @@ export class CategoryComponent implements OnInit {
   editMode = false;
   saving = false;
 
-  form: { name: string } = { name: '' };
+  form = { name: '', description: '' };
   editId = '';
 
   constructor(private api: ApiService, private snackBar: MatSnackBar) {}
@@ -59,13 +58,13 @@ export class CategoryComponent implements OnInit {
 
   load(): void {
     this.loading = true;
-    this.api.getCategories().subscribe({
+    this.api.getHeaderInfos().subscribe({
       next: (data) => {
         this.dataSource.data = data;
         this.loading = false;
       },
       error: (err) => {
-        this.snackBar.open(err.error?.message || 'Failed to load categories', 'Close', { duration: 3000 });
+        this.snackBar.open(err.error?.message || 'Failed to load Header Infos', 'Close', { duration: 3000 });
         this.loading = false;
       },
     });
@@ -83,14 +82,14 @@ export class CategoryComponent implements OnInit {
   openCreate(): void {
     this.editMode = false;
     this.editId = '';
-    this.form = { name: '' };
+    this.form = { name: '', description: '' };
     this.formVisible = true;
   }
 
-  openEdit(cat: Category): void {
+  openEdit(info: HeaderInfo): void {
     this.editMode = true;
-    this.editId = cat._id;
-    this.form = { name: cat.name };
+    this.editId = info._id;
+    this.form = { name: info.name, description: info.description || '' };
     this.formVisible = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -101,19 +100,19 @@ export class CategoryComponent implements OnInit {
 
   save(): void {
     if (!this.form.name.trim()) {
-      this.snackBar.open('Category name is required', 'Close', { duration: 3000 });
+      this.snackBar.open('Name is required', 'Close', { duration: 3000 });
       return;
     }
     this.saving = true;
 
     const req = this.editMode
-      ? this.api.updateCategory(this.editId, this.form)
-      : this.api.createCategory(this.form);
+      ? this.api.updateHeaderInfo(this.editId, this.form)
+      : this.api.createHeaderInfo(this.form);
 
     req.subscribe({
       next: () => {
         this.saving = false;
-        this.snackBar.open(this.editMode ? 'Category updated!' : 'Category created!', 'Close', { duration: 3000 });
+        this.snackBar.open(this.editMode ? 'Header Info updated!' : 'Header Info created!', 'Close', { duration: 3000 });
         this.formVisible = false;
         this.load();
       },
@@ -125,10 +124,10 @@ export class CategoryComponent implements OnInit {
   }
 
   delete(id: string, name: string): void {
-    if (!confirm(`Delete category "${name}"?`)) return;
-    this.api.deleteCategory(id).subscribe({
+    if (!confirm(`Delete Header Info "${name}"?`)) return;
+    this.api.deleteHeaderInfo(id).subscribe({
       next: () => {
-        this.snackBar.open('Category deleted', 'Close', { duration: 3000 });
+        this.snackBar.open('Header Info deleted', 'Close', { duration: 3000 });
         this.load();
       },
       error: (err) => {

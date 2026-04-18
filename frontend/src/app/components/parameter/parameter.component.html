@@ -10,103 +10,136 @@
   </div>
 
   @if (formVisible) {
-    <mat-card appearance="outlined" style="margin-bottom: 24px;">
-      <mat-card-header>
-        <mat-card-title>{{ editMode ? 'Edit Parameter' : 'Create Parameter' }}</mat-card-title>
-      </mat-card-header>
-      <mat-card-content style="padding-top:16px;">
-        
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Parameter Name</mat-label>
-            <input matInput [(ngModel)]="form.name" placeholder="e.g. Total Weight">
-          </mat-form-field>
+  <mat-card appearance="outlined" style="margin-bottom: 24px;">
+    <mat-card-header>
+      <mat-card-title>{{ editMode ? 'Edit Parameter' : 'Create Parameter' }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content style="padding-top:16px;">
 
-          <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Key (Variable Name)</mat-label>
-            <input matInput [(ngModel)]="form.key" placeholder="e.g. weight">
-            <mat-hint>Used in formulas. Usually lowercase, no spaces.</mat-hint>
-          </mat-form-field>
-        </div>
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field-half">
+          <mat-label>Parameter Name</mat-label>
+          <input matInput [(ngModel)]="form.name" placeholder="e.g. Total Weight">
+        </mat-form-field>
 
-        <div style="margin-top: 16px; margin-bottom: 24px;">
-          <mat-radio-group [(ngModel)]="form.type" style="display:flex; gap: 24px;">
-            <mat-radio-button value="input" color="primary">User Input</mat-radio-button>
-            <mat-radio-button value="formula" color="primary">Calculated Formula</mat-radio-button>
-          </mat-radio-group>
-        </div>
+        <mat-form-field appearance="outline" class="form-field-half">
+          <mat-label>Key (Variable Name)</mat-label>
+          <input matInput [(ngModel)]="form.key" placeholder="e.g. weight">
+          <mat-hint>Used in formulas. Usually lowercase, no spaces.</mat-hint>
+        </mat-form-field>
+      </div>
 
-        @if (form.type === 'formula') {
-          <div class="form-row" style="margin-bottom: 24px;">
-            <mat-form-field appearance="outline" class="form-field-full">
-              <mat-label>Formula</mat-label>
-              <input matInput [(ngModel)]="form.formula" (ngModelChange)="onFormulaChange($event)" placeholder="e.g. quantity * rate">
-              <mat-icon matSuffix [style.color]="formulaValid === true ? '#10b981' : (formulaValid === false ? '#ef4444' : '')">
-                {{ formulaValid === true ? 'check_circle' : (formulaValid === false ? 'error' : 'functions') }}
-              </mat-icon>
-              @if (formulaValid === false) {
-                <mat-error>{{ formulaError }}</mat-error>
-              }
-              @if (extractedVars.length > 0) {
-                <mat-hint>Variables identified: <strong>{{ extractedVars.join(', ') }}</strong></mat-hint>
-              }
-            </mat-form-field>
-          </div>
-        }
+      <div style="margin-top: 16px; margin-bottom: 24px;">
+        <mat-radio-group [(ngModel)]="form.type" style="display:flex; gap: 24px;">
+          <mat-radio-button value="input" color="primary">User Input</mat-radio-button>
+          <mat-radio-button value="formula" color="primary">Calculated Formula</mat-radio-button>
+        </mat-radio-group>
+      </div>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Unit (optional)</mat-label>
-            <mat-select [(ngModel)]="form.unitId">
-              <mat-option>
-                <ngx-mat-select-search [(ngModel)]="unitSearch" (ngModelChange)="filterUnits()" placeholderLabel="Search units..."></ngx-mat-select-search>
-              </mat-option>
-              <mat-option value="">— None —</mat-option>
-              @for (unit of filteredUnits; track unit._id) {
-                <mat-option [value]="unit._id">{{ unit.name }} ({{ unit.symbol }})</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field-half">
+          <mat-label>Unit (optional)</mat-label>
+          <mat-select [(ngModel)]="form.unitId">
+            <mat-option>
+              <ngx-mat-select-search [(ngModel)]="unitSearch" (ngModelChange)="filterUnits()"
+                placeholderLabel="Search units..."></ngx-mat-select-search>
+            </mat-option>
+            <mat-option value="">— None —</mat-option>
+            @for (unit of filteredUnits; track unit._id) {
+            <mat-option [value]="unit._id">{{ unit.name }} ({{ unit.symbol }})</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-          <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Header Info (optional)</mat-label>
-            <mat-select [(ngModel)]="form.headerInfoId">
-              <mat-option>
-                <ngx-mat-select-search [(ngModel)]="headerSearch" (ngModelChange)="filterHeaderInfos()" placeholderLabel="Search headers..."></ngx-mat-select-search>
-              </mat-option>
-              <mat-option value="">— Global / None —</mat-option>
-              @for (info of filteredHeaderInfos; track info._id) {
-                <mat-option [value]="info._id">{{ info.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+        <mat-form-field appearance="outline" class="form-field-half">
+          <mat-label>Header Info (optional)</mat-label>
+          <mat-select [(ngModel)]="form.headerInfoId">
+            <mat-option>
+              <ngx-mat-select-search [(ngModel)]="headerSearch" (ngModelChange)="filterHeaderInfos()"
+                placeholderLabel="Search headers..."></ngx-mat-select-search>
+            </mat-option>
+            <mat-option value="">— Global / None —</mat-option>
+            @for (info of filteredHeaderInfos; track info._id) {
+            <mat-option [value]="info._id">{{ info.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
 
-          <mat-form-field appearance="outline" class="form-field-half">
-            <mat-label>Category (optional)</mat-label>
-            <mat-select [(ngModel)]="form.categoryId">
-              <mat-option>
-                <ngx-mat-select-search [(ngModel)]="catSearch" (ngModelChange)="filterCategories()" placeholderLabel="Search categories..."></ngx-mat-select-search>
-              </mat-option>
-              <mat-option value="">— Global / None —</mat-option>
-              @for (cat of filteredCategories; track cat._id) {
-                <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
+        <mat-form-field appearance="outline" class="form-field-half">
+          <mat-label>Category (optional)</mat-label>
+          <mat-select [(ngModel)]="form.categoryId">
+            <mat-option>
+              <ngx-mat-select-search [(ngModel)]="catSearch" (ngModelChange)="filterCategories()"
+                placeholderLabel="Search categories..."></ngx-mat-select-search>
+            </mat-option>
+            <mat-option value="">— Global / None —</mat-option>
+            @for (cat of filteredCategories; track cat._id) {
+            <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
 
-      </mat-card-content>
-      <mat-card-actions align="end">
-        <button mat-button (click)="closeForm()">Cancel</button>
-        <button mat-flat-button color="primary" (click)="save()" [disabled]="saving">
-          {{ saving ? 'Saving...' : 'Save' }}
-        </button>
-      </mat-card-actions>
-    </mat-card>
+      @if (form.type === 'formula') {
+      <div class="form-row" style="margin-bottom: 24px;">
+        <mat-form-field appearance="outline" class="form-field-full">
+          <mat-label> Formula</mat-label>
+          <input matInput #formulaInput [(ngModel)]="form.formula" (ngModelChange)="onFormulaChange($event)"
+            placeholder="e.g. quantity * rate">
+
+          <mat-icon matSuffix
+            [style.color]="formulaValid === true ? '#10b981' : (formulaValid === false ? '#ef4444' : '')">
+            {{ formulaValid === true ? 'check_circle' : (formulaValid === false ? 'error' : 'functions') }}
+          </mat-icon>
+
+          <!-- Insert Variable Menu -->
+          <button mat-icon-button matSuffix [matMenuTriggerFor]="varMenu" type="button" title="Insert Variable"
+            style="color: #64748b; margin-left: 8px;">
+            <mat-icon>add_circle_outline</mat-icon>
+          </button>
+
+          <mat-menu #varMenu="matMenu">
+            <div (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()" style="padding: 8px 16px;">
+              <mat-form-field appearance="outline" style="width: 100%; margin-bottom: -1.25em;">
+                <mat-icon matPrefix>search</mat-icon>
+                <input matInput [(ngModel)]="menuSearchVar" placeholder="Search variables..." autocomplete="off">
+              </mat-form-field>
+            </div>
+            @for (p of getFilteredAvailableParameters(); track p._id) {
+            <button mat-menu-item (click)="insertVariable(p.key, formulaInput)"
+              style="height: 36px; line-height: 36px;">
+              <span style="font-family: 'Fira Code', monospace; font-weight: 500; color: #0284c7;">{{ p.key }}</span>
+              <span style="color: #94a3b8; font-size: 0.85em; margin-left: 8px;">— {{ p.name }}</span>
+            </button>
+            }
+            @if (getFilteredAvailableParameters().length === 0) {
+            <button mat-menu-item disabled>No available variables</button>
+            }
+          </mat-menu>
+
+          @if (formulaValid === false) {
+          <mat-error>{{ formulaError }}</mat-error>
+          }
+          @if (extractedVars.length > 0) {
+          <mat-hint>Variables identified: <strong>{{ extractedVars.join(', ') }}</strong></mat-hint>
+          }
+        </mat-form-field>
+      </div>
+      }
+
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="closeForm()">Cancel</button>
+      <button mat-flat-button color="primary" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Saving...' : 'Save' }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
   }
 
   <mat-card appearance="outlined" style="padding:0;">
-    <div style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+    <div
+      style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
       <mat-form-field appearance="outline" style="flex: 1; min-width: 250px; margin-bottom:-1.25em;">
         <mat-label>Search Parameters</mat-label>
         <mat-icon matPrefix>search</mat-icon>
@@ -118,7 +151,7 @@
         <mat-select [(ngModel)]="tableFilterCategory" (selectionChange)="applyFilter()">
           <mat-option value="">All Categories</mat-option>
           @for (cat of categories; track cat._id) {
-            <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
+          <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
@@ -128,86 +161,99 @@
         <mat-select [(ngModel)]="tableFilterHeader" (selectionChange)="applyFilter()">
           <mat-option value="">All Headers</mat-option>
           @for (info of headerInfos; track info._id) {
-            <mat-option [value]="info._id">{{ info.name }}</mat-option>
+          <mat-option [value]="info._id">{{ info.name }}</mat-option>
           }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="flex: 1; min-width: 150px; margin-bottom:-1.25em;">
+        <mat-label>Filter by Type</mat-label>
+        <mat-select [(ngModel)]="tableFilterType" (selectionChange)="applyFilter()">
+          <mat-option value="">All Types</mat-option>
+          <mat-option value="input">User Input</mat-option>
+          <mat-option value="formula">Calculated Formula</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
 
     @if (loading) {
-      <div style="padding: 40px; text-align: center; color: var(--text-muted);">
-        <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon>
-        <p>Loading records...</p>
-      </div>
+    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+      <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon>
+      <p>Loading records...</p>
+    </div>
     } @else {
-      <div style="overflow-x: auto;">
-        <table mat-table [dataSource]="dataSource" matSort style="width: 100%; min-width:800px;">
-          
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Name </th>
-            <td mat-cell *matCellDef="let element" style="font-weight: 500;"> {{element.name}} </td>
-          </ng-container>
+    <div style="overflow-x: auto;">
+      <table mat-table [dataSource]="dataSource" matSort style="width: 100%; min-width:800px;">
 
-          <ng-container matColumnDef="key">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Key </th>
-            <td mat-cell *matCellDef="let element"> <code style="background:var(--bg-main); padding:2px 6px; border-radius:4px;">{{element.key}}</code> </td>
-          </ng-container>
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Name </th>
+          <td mat-cell *matCellDef="let element" style="font-weight: 500;"> {{element.name}} </td>
+        </ng-container>
 
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Type </th>
-            <td mat-cell *matCellDef="let element">
-              @if (element.type === 'input') {
-                <span style="font-size:0.75em; padding:2px 8px; border-radius:12px; background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe;">Input</span>
-              } @else {
-                <span style="font-size:0.75em; padding:2px 8px; border-radius:12px; background:#f3e8ff; color:#7e22ce; border:1px solid #e9d5ff;">Formula</span>
-              }
-            </td>
-          </ng-container>
+        <ng-container matColumnDef="key">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Key </th>
+          <td mat-cell *matCellDef="let element"> <code
+              style="background:var(--bg-main); padding:2px 6px; border-radius:4px;">{{element.key}}</code> </td>
+        </ng-container>
 
-          <ng-container matColumnDef="formula">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Formula </th>
-            <td mat-cell *matCellDef="let element" style="color:var(--text-muted); font-size:0.9em; font-family:monospace;"> {{element.formula || '—'}} </td>
-          </ng-container>
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Type </th>
+          <td mat-cell *matCellDef="let element">
+            @if (element.type === 'input') {
+            <span
+              style="font-size:0.75em; padding:2px 8px; border-radius:12px; background:#e0e7ff; color:#4338ca; border:1px solid #c7d2fe;">Input</span>
+            } @else {
+            <span
+              style="font-size:0.75em; padding:2px 8px; border-radius:12px; background:#f3e8ff; color:#7e22ce; border:1px solid #e9d5ff;">Formula</span>
+            }
+          </td>
+        </ng-container>
 
-          <ng-container matColumnDef="unit">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Unit </th>
-            <td mat-cell *matCellDef="let element" style="color:var(--text-muted);"> {{ getUnitSymbol(element) }} </td>
-          </ng-container>
+        <ng-container matColumnDef="formula">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Formula </th>
+          <td mat-cell *matCellDef="let element"
+            style="color:var(--text-muted); font-size:0.9em; font-family:monospace;"> {{element.formula || '—'}} </td>
+        </ng-container>
 
-          <ng-container matColumnDef="headerInfoId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Header </th>
-            <td mat-cell *matCellDef="let element"> {{ getHeaderInfoName(element) }} </td>
-          </ng-container>
+        <ng-container matColumnDef="unit">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Unit </th>
+          <td mat-cell *matCellDef="let element" style="color:var(--text-muted);"> {{ getUnitSymbol(element) }} </td>
+        </ng-container>
 
-          <ng-container matColumnDef="categoryId">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header> Category </th>
-            <td mat-cell *matCellDef="let element"> {{ getCategoryName(element) }} </td>
-          </ng-container>
+        <ng-container matColumnDef="headerInfoId">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Header </th>
+          <td mat-cell *matCellDef="let element"> {{ getHeaderInfoName(element) }} </td>
+        </ng-container>
 
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef style="text-align: right;"> Actions </th>
-            <td mat-cell *matCellDef="let element" style="text-align: right;">
-              <button mat-icon-button color="primary" (click)="openEdit(element)" title="Edit">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="delete(element._id, element.name)" title="Delete">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </td>
-          </ng-container>
+        <ng-container matColumnDef="categoryId">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header> Category </th>
+          <td mat-cell *matCellDef="let element"> {{ getCategoryName(element) }} </td>
+        </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-          
-          <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell" colspan="8" style="padding: 24px; text-align: center; color: var(--text-muted);">
-              No parameters match your search.
-            </td>
-          </tr>
-        </table>
-      </div>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef style="text-align: right;"> Actions </th>
+          <td mat-cell *matCellDef="let element" style="text-align: right;">
+            <button mat-icon-button color="primary" (click)="openEdit(element)" title="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="delete(element._id, element.name)" title="Delete">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
 
-      <mat-paginator [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons></mat-paginator>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" colspan="8" style="padding: 24px; text-align: center; color: var(--text-muted);">
+            No parameters match your search.
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <mat-paginator [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons></mat-paginator>
     }
   </mat-card>
 </div>

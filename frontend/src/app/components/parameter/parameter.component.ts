@@ -16,6 +16,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 
 @Component({
@@ -37,6 +38,7 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
     MatSelectModule,
     MatRadioModule,
     MatTooltipModule,
+    MatMenuModule,
     NgxMatSelectSearchModule
   ],
   templateUrl: './parameter.component.html',
@@ -66,10 +68,10 @@ export class ParameterComponent implements OnInit {
   unitSearch = '';
   headerSearch = '';
 
-  // Table Filters
   tableFilterText = '';
   tableFilterCategory = '';
   tableFilterHeader = '';
+  tableFilterType = '';
 
   loading = false;
   formVisible = false;
@@ -102,6 +104,7 @@ export class ParameterComponent implements OnInit {
   formulaError = '';
   extractedVars: string[] = [];
   validatingFormula = false;
+  menuSearchVar = '';
 
   private formulaInput$ = new Subject<string>();
 
@@ -129,7 +132,12 @@ export class ParameterComponent implements OnInit {
           matchHeader = headId === filter.headerInfoId;
         }
 
-        return matchText && matchCat && matchHeader;
+        let matchType = true;
+        if (filter.type) {
+          matchType = data.type === filter.type;
+        }
+
+        return matchText && matchCat && matchHeader && matchType;
       } catch (e) {
         // Fallback for direct string (if any)
         const searchStr = `${data.name} ${data.key} ${data.formula}`.toLowerCase();
@@ -160,7 +168,8 @@ export class ParameterComponent implements OnInit {
     const filterObj = {
       text: this.tableFilterText.trim(),
       categoryId: this.tableFilterCategory,
-      headerInfoId: this.tableFilterHeader
+      headerInfoId: this.tableFilterHeader,
+      type: this.tableFilterType
     };
     
     this.dataSource.filter = JSON.stringify(filterObj);
@@ -228,6 +237,46 @@ export class ParameterComponent implements OnInit {
       this.formulaValid = null;
       this.extractedVars = [];
     }
+  }
+
+  getAvailableParametersForFormula(): Parameter[] {
+    const catId = this.form.categoryId;
+    return this.dataSource.data.filter(p => {
+      // Don't allow inserting itself
+      if (this.editId && p._id === this.editId) return false;
+      
+      const pCat = (p.categoryId as any)?._id || p.categoryId;
+      // Include global parameters (no category) AND parameters in the selected category
+      return !pCat || pCat === catId;
+    });
+  }
+
+  getFilteredAvailableParameters(): Parameter[] {
+    const list = this.getAvailableParametersForFormula();
+    if (!this.menuSearchVar) return list;
+    const search = this.menuSearchVar.toLowerCase();
+    return list.filter(p => 
+      p.key.toLowerCase().includes(search) || 
+      p.name.toLowerCase().includes(search)
+    );
+  }
+
+  insertVariable(key: string, inputElement: HTMLInputElement): void {
+    const start = inputElement.selectionStart || 0;
+    const end = inputElement.selectionEnd || 0;
+    const current = this.form.formula || '';
+    
+    const insertStr = ` ${key} `;
+    this.form.formula = current.substring(0, start) + insertStr + current.substring(end);
+    
+    // Wait for angular to update DOM then refocus and position cursor
+    setTimeout(() => {
+      inputElement.focus();
+      inputElement.setSelectionRange(start + insertStr.length, start + insertStr.length);
+    }, 0);
+    
+    // Trigger validation
+    this.onFormulaChange(this.form.formula);
   }
 
   openCreate(): void {

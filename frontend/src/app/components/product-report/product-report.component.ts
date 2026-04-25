@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../../services/api.service';
-import { Product, Parameter, ReportTemplate, ReportTemplateCell } from '../../models/interfaces';
+import { Product, Parameter, ReportTemplate, ReportTemplateCell, ReportHistory } from '../../models/interfaces';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -42,6 +42,7 @@ export class ProductReportComponent implements OnInit {
   error: string | null = null;
 
   activeView: 'custom' | 'standard' = 'custom';
+  savingHistory = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -263,6 +264,36 @@ export class ProductReportComponent implements OnInit {
       },
       error: (err) => {
         this.snackBar.open('Error recalculating values.', 'Close', { duration: 3000 });
+      }
+    });
+  }
+
+  saveAndDownload(): void {
+    if (!this.product) return;
+    
+    const notes = prompt('Enter a label for this report snapshot (optional, e.g. "Rev A", "Client Quote"):') ?? '';
+
+    const categoryName = (this.product.categoryId as any)?.name || '';
+    const payload = {
+      productId: this.product._id as string,
+      productName: this.product.name,
+      categoryName,
+      inputs: { ...this.product.inputs },
+      calculated: { ...this.product.calculated },
+      notes,
+    };
+
+    this.savingHistory = true;
+    this.api.saveReportHistory(payload).subscribe({
+      next: () => {
+        this.savingHistory = false;
+        this.snackBar.open('✅ Report saved to history!', 'Close', { duration: 2500 });
+        window.print();
+      },
+      error: () => {
+        this.savingHistory = false;
+        this.snackBar.open('⚠️ Could not save history, printing anyway.', 'Close', { duration: 3000 });
+        window.print();
       }
     });
   }

@@ -11,6 +11,7 @@ import {
   InputVariablesResult,
   HeaderInfo,
   ReportTemplate,
+  ReportHistory,
 } from '../models/interfaces';
 
 const BASE = '/api';
@@ -114,5 +115,26 @@ export class ApiService {
   }
   deleteReportTemplate(productId: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${BASE}/report-template/${productId}`);
+  }
+
+  // ── Report History ───────────────────────────────────────────────────────────
+  saveReportHistory(data: {
+    productId: string;
+    productName: string;
+    categoryName: string;
+    inputs: Record<string, number>;
+    calculated: Record<string, number>;
+    notes: string;
+  }): Observable<{ message: string; history: ReportHistory }> {
+    return this.http.post<{ message: string; history: ReportHistory }>(`${BASE}/report-history`, data);
+  }
+  getReportHistory(productId: string): Observable<ReportHistory[]> {
+    return this.http.get<ReportHistory[]>(`${BASE}/report-history/product/${productId}`);
+  }
+  getReportHistoryById(id: string): Observable<ReportHistory> {
+    return this.http.get<ReportHistory>(`${BASE}/report-history/${id}`);
+  }
+  deleteReportHistory(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${BASE}/report-history/${id}`);
   }
 }

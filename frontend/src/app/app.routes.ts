@@ -37,4 +37,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/report-builder/report-builder').then((m) => m.ReportBuilder),
   },
+  {
+    path: 'report-history/:id',
+    loadComponent: () =>
+      import('./components/report-history-view/report-history-view.component').then((m) => m.ReportHistoryViewComponent),
+  },
 ];

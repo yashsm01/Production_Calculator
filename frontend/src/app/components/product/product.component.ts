@@ -1,9 +1,9 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { Category, Product, EngineResult, Parameter } from '../../models/interfaces';
+import { Category, Product, EngineResult, Parameter, ReportHistory } from '../../models/interfaces';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -38,7 +38,8 @@ import { RouterModule } from '@angular/router';
     MatDividerModule,
     NgxMatSelectSearchModule,
     RouterModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    DatePipe
   ],
   templateUrl: './product.component.html',
   styleUrl: './product.component.css',
@@ -82,6 +83,13 @@ export class ProductComponent implements OnInit {
 
   // Last calculation result
   lastResult: EngineResult | null = null;
+
+  // ── History panel state ─────────────────────────────────────────────────
+  historyPanelOpen = false;
+  historyProductId = '';
+  historyProductName = '';
+  historyList: ReportHistory[] = [];
+  historyLoading = false;
 
   constructor(private api: ApiService, private snackBar: MatSnackBar) {}
 
@@ -400,5 +408,33 @@ export class ProductComponent implements OnInit {
     this.lastResult = null;
     this.error = '';
     this.hiddenKeys.clear();
+  }
+
+  openHistoryPanel(product: Product): void {
+    this.historyProductId = product._id;
+    this.historyProductName = product.name;
+    this.historyPanelOpen = true;
+    this.historyLoading = true;
+    this.historyList = [];
+    this.api.getReportHistory(product._id).subscribe({
+      next: (list) => { this.historyList = list; this.historyLoading = false; },
+      error: () => { this.historyLoading = false; }
+    });
+  }
+
+  closeHistoryPanel(): void {
+    this.historyPanelOpen = false;
+    this.historyList = [];
+    this.historyProductId = '';
+  }
+
+  deleteHistoryEntry(id: string): void {
+    if (!confirm('Delete this history snapshot?')) return;
+    this.api.deleteReportHistory(id).subscribe({
+      next: () => {
+        this.historyList = this.historyList.filter(h => h._id !== id);
+        this.snackBar.open('Snapshot deleted.', 'Close', { duration: 2000 });
+      }
+    });
   }
 }

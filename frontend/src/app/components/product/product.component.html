@@ -191,6 +191,9 @@
               <a mat-stroked-button color="primary" [routerLink]="['/report', element._id]" [queryParams]="{view: 'standard'}" style="margin-right: 8px; border-color: #0ea5e9; color: #0ea5e9;">
                 <mat-icon style="margin-right: 4px;">list_alt</mat-icon> Details
               </a>
+              <button mat-stroked-button (click)="openHistoryPanel(element)" style="margin-right: 8px; border-color: #8b5cf6; color: #8b5cf6;" matTooltip="View saved report history">
+                <mat-icon style="margin-right: 4px;">history</mat-icon> History
+              </button>
               <button mat-stroked-button color="accent" (click)="editProduct(element)" style="margin-right: 8px;">
                 Edit
               </button>
@@ -215,3 +218,56 @@
     }
   </mat-card>
 </div>
+
+<!-- History Side Panel -->
+@if (historyPanelOpen) {
+  <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:flex; justify-content:flex-end;" (click)="closeHistoryPanel()">
+    <div style="width:540px; max-width:100vw; background:white; height:100%; display:flex; flex-direction:column; box-shadow:-4px 0 20px rgba(0,0,0,0.15); overflow:hidden;" (click)="$event.stopPropagation()">
+      
+      <!-- Header -->
+      <div style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
+        <div>
+          <h2 style="margin:0; font-weight:600; color:#0f172a; font-size:1.1rem;">Report History</h2>
+          <p style="margin:4px 0 0 0; color:#64748b; font-size:0.85rem;">{{ historyProductName }}</p>
+        </div>
+        <button mat-icon-button (click)="closeHistoryPanel()"><mat-icon>close</mat-icon></button>
+      </div>
+
+      <!-- Content -->
+      <div style="flex:1; overflow-y:auto; padding:16px;">
+        @if (historyLoading) {
+          <div style="text-align:center; padding:3rem; color:#94a3b8;">
+            <mat-icon style="font-size:36px; width:36px; height:36px; animation:spin 1s linear infinite;">sync</mat-icon>
+            <p>Loading history...</p>
+          </div>
+        } @else if (historyList.length === 0) {
+          <div style="text-align:center; padding:3rem; color:#94a3b8;">
+            <mat-icon style="font-size:48px; width:48px; height:48px;">history</mat-icon>
+            <p style="margin-top:12px;">No saved snapshots yet.</p>
+            <p style="font-size:0.8rem;">Click <strong>"Save &amp; Download PDF"</strong> on a report to save a snapshot here.</p>
+          </div>
+        } @else {
+          @for (h of historyList; track h._id) {
+            <div style="border:1px solid #e2e8f0; border-radius:8px; padding:14px 16px; margin-bottom:12px; background:white;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                  <div style="font-weight:600; color:#0f172a; font-size:0.95rem;">{{ h.notes || 'Untitled Snapshot' }}</div>
+                  <div style="color:#64748b; font-size:0.8rem; margin-top:4px;">{{ h.savedAt | date:'medium' }}</div>
+                  <div style="color:#94a3b8; font-size:0.75rem; margin-top:2px;">{{ h.categoryName }}</div>
+                </div>
+                <button mat-icon-button color="warn" (click)="deleteHistoryEntry(h._id)" matTooltip="Delete snapshot">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              <div style="margin-top:12px; display:flex; gap:8px;">
+                <a mat-flat-button color="primary" [routerLink]="['/report-history', h._id]" style="font-size:0.85rem; padding:0 12px; height:32px; line-height:32px;">
+                  <mat-icon style="margin-right:4px; font-size:16px; width:16px; height:16px;">visibility</mat-icon> View Report
+                </a>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -2,8 +2,12 @@
   
   <!-- Floating Print Controls (Hidden on Print) -->
   <div class="print-controls">
-    <button mat-flat-button color="primary" (click)="printReport()" style="padding: 24px 32px; border-radius: 12px; font-size: 1.1rem;">
-      <mat-icon style="margin-right: 8px;">print</mat-icon> Download PDF
+    <button mat-flat-button color="primary" (click)="saveAndDownload()" [disabled]="savingHistory" style="padding: 24px 32px; border-radius: 12px; font-size: 1.1rem;">
+      <mat-icon style="margin-right: 8px;">history</mat-icon>
+      {{ savingHistory ? 'Saving...' : 'Save & Download PDF' }}
+    </button>
+    <button mat-stroked-button (click)="printReport()" style="padding: 16px 32px; border-radius: 12px; background: white; border-color: #cbd5e1;">
+      <mat-icon style="margin-right: 8px;">print</mat-icon> Print Only
     </button>
     <a mat-stroked-button routerLink="/product" style="padding: 16px 32px; border-radius: 12px; color: #475569; border-color: #cbd5e1; background: white;">
       <mat-icon style="margin-right: 8px;">arrow_back</mat-icon> Back to Products

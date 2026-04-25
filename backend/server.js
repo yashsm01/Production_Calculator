@@ -9,6 +9,7 @@ const parameterRoutes = require('./routes/parameter');
 const productRoutes = require('./routes/product');
 const headerInfoRoutes = require('./routes/headerInfo');
 const reportTemplateRoutes = require('./routes/reportTemplate');
+const reportHistoryRoutes = require('./routes/reportHistory');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -24,6 +25,7 @@ app.use('/api/parameter', parameterRoutes);
 app.use('/api/product', productRoutes);
 app.use('/api/header-info', headerInfoRoutes);
 app.use('/api/report-template', reportTemplateRoutes);
+app.use('/api/report-history', reportHistoryRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

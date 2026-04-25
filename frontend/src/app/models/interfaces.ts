@@ -69,6 +69,17 @@ export interface ReportTemplate {
   updatedAt?: string;
 }
 
+export interface ReportHistory {
+  _id: string;
+  productId: string;
+  productName: string;
+  categoryName: string;
+  inputs: Record<string, number>;
+  calculated: Record<string, number>;
+  notes: string;
+  savedAt: string;
+}
+
 export interface FormulaValidationResult {
   valid: boolean;
   variables?: string[];

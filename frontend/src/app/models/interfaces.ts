@@ -42,6 +42,7 @@ export interface Product {
   categoryId: Category;
   inputs: Record<string, number>;
   calculated: Record<string, number>;
+  hiddenParameters?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

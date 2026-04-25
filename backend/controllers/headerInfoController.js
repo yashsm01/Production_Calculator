@@ -29,6 +29,11 @@ exports.create = async (req, res, next) => {
     const existing = await HeaderInfo.findOne({ name });
     if (existing) return res.status(400).json({ message: 'Header Info name already exists' });
 
+    if (index || index === 0) {
+      const existingIndex = await HeaderInfo.findOne({ index });
+      if (existingIndex) return res.status(400).json({ message: `Index "${index}" is already used by "${existingIndex.name}"` });
+    }
+
     const headerInfo = await HeaderInfo.create({ name, description, index: (index || index === 0) ? index : null });
     res.status(201).json(headerInfo);
   } catch (err) {
@@ -44,6 +49,11 @@ exports.update = async (req, res, next) => {
     if (name) {
       const existing = await HeaderInfo.findOne({ name, _id: { $ne: req.params.id } });
       if (existing) return res.status(400).json({ message: 'Header Info name already exists' });
+    }
+
+    if (index || index === 0) {
+      const existingIndex = await HeaderInfo.findOne({ index, _id: { $ne: req.params.id } });
+      if (existingIndex) return res.status(400).json({ message: `Index "${index}" is already used by "${existingIndex.name}"` });
     }
 
     const headerInfo = await HeaderInfo.findByIdAndUpdate(

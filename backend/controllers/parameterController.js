@@ -52,6 +52,11 @@ exports.create = async (req, res, next) => {
     // Check key uniqueness
     const existing = await Parameter.findOne({ key: key.toLowerCase() });
     if (existing) return res.status(400).json({ message: `Key "${key}" already exists` });
+    
+    if (index || index === 0) {
+      const existingIndex = await Parameter.findOne({ index });
+      if (existingIndex) return res.status(400).json({ message: `Index "${index}" is already used by parameter "${existingIndex.name}" (${existingIndex.key})` });
+    }
 
     const parameter = await Parameter.create({
       name,
@@ -91,6 +96,11 @@ exports.update = async (req, res, next) => {
         _id: { $ne: req.params.id },
       });
       if (existing) return res.status(400).json({ message: `Key "${key}" already exists` });
+    }
+
+    if (index || index === 0) {
+      const existingIndex = await Parameter.findOne({ index, _id: { $ne: req.params.id } });
+      if (existingIndex) return res.status(400).json({ message: `Index "${index}" is already used by parameter "${existingIndex.name}" (${existingIndex.key})` });
     }
 
     const parameter = await Parameter.findByIdAndUpdate(

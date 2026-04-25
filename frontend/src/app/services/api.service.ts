@@ -96,6 +96,7 @@ export class ApiService {
     name: string;
     categoryId: string;
     inputs: Record<string, number>;
+    hiddenParameters?: string[];
   }): Observable<EngineResult> {
     return this.http.post<EngineResult>(`${BASE}/product/create`, data);
   }

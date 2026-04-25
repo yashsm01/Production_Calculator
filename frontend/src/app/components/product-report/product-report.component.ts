@@ -91,7 +91,8 @@ export class ProductReportComponent implements OnInit {
       if (!record) return;
       Object.entries(record).forEach(([key, value]) => {
         const p = paramMap[key];
-        // Skip unmapped variables (shouldn't happen, but safely guard)
+        // Skip hidden parameters (per-product setting) or unmapped variables
+        if (product.hiddenParameters?.includes(key)) return;
         if (!p && typeLabel === 'formula') return; 
         
         const headerObj = (p?.headerInfoId as any);

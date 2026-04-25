@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { Category, Product, EngineResult, Parameter } from '../../models/interfaces';
@@ -36,7 +37,8 @@ import { RouterModule } from '@angular/router';
     MatSelectModule,
     MatDividerModule,
     NgxMatSelectSearchModule,
-    RouterModule
+    RouterModule,
+    MatCheckboxModule
   ],
   templateUrl: './product.component.html',
   styleUrl: './product.component.css',
@@ -68,6 +70,9 @@ export class ProductComponent implements OnInit {
 
   // Parameters for the selected category (for dependency visualization)
   categoryParameters: Parameter[] = [];
+  
+  // Per-product visibility: keys to HIDE from report
+  hiddenKeys: Set<string> = new Set();
 
   // UI state
   loadingInputs = false;
@@ -126,6 +131,7 @@ export class ProductComponent implements OnInit {
     this.error = '';
     this.lastResult = null;
     this.inputValues = {};
+    this.hiddenKeys.clear();
 
     this.api.getInputVariables(this.selectedCategoryId).subscribe({
       next: (result) => {
@@ -185,6 +191,7 @@ export class ProductComponent implements OnInit {
         name: this.productName,
         categoryId: this.selectedCategoryId,
         inputs: numericInputs,
+        hiddenParameters: Array.from(this.hiddenKeys)
       })
       .subscribe({
         next: (result) => {
@@ -302,6 +309,37 @@ export class ProductComponent implements OnInit {
     return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
   }
 
+  isReportHidden(key: string): boolean {
+    return this.hiddenKeys.has(key);
+  }
+
+  toggleReportHidden(key: string): void {
+    if (this.hiddenKeys.has(key)) {
+      this.hiddenKeys.delete(key);
+    } else {
+      this.hiddenKeys.add(key);
+    }
+  }
+
+  isHeaderFullyVisible(items: any[]): boolean {
+    if (!items.length) return true;
+    return items.every(p => !this.hiddenKeys.has(p.key));
+  }
+
+  isHeaderPartiallyVisible(items: any[]): boolean {
+    const visibleCount = items.filter(p => !this.hiddenKeys.has(p.key)).length;
+    return visibleCount > 0 && visibleCount < items.length;
+  }
+
+  toggleHeaderVisibility(items: any[]): void {
+    const allVisible = this.isHeaderFullyVisible(items);
+    if (allVisible) {
+      items.forEach(p => this.hiddenKeys.add(p.key));
+    } else {
+      items.forEach(p => this.hiddenKeys.delete(p.key));
+    }
+  }
+
   deleteProduct(id: string, name: string): void {
     if (!confirm(`Delete product "${name}"?`)) return;
     this.api.deleteProduct(id).subscribe({
@@ -323,6 +361,7 @@ export class ProductComponent implements OnInit {
     this.error = '';
     this.lastResult = null;
     this.inputValues = {};
+    this.hiddenKeys = new Set(product.hiddenParameters || []);
 
     // Fetch the inputs (now loads global inputs)
     this.api.getInputVariables(this.selectedCategoryId).subscribe({
@@ -360,5 +399,6 @@ export class ProductComponent implements OnInit {
     this.categoryParameters = [];
     this.lastResult = null;
     this.error = '';
+    this.hiddenKeys.clear();
   }
 }

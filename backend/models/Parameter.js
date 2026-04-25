@@ -46,6 +46,10 @@ const parameterSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    showInReport: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

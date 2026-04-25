@@ -21,6 +21,10 @@ const productSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    hiddenParameters: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true }
 );

@@ -45,20 +45,30 @@
             
             @for (group of getGroupedInputs(); track group.header) {
               <div style="margin-bottom: 24px;">
-                <h4 style="margin: 0 0 12px 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+                <h4 style="margin: 0 0 12px 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; display: flex; align-items: center;">
+                  <mat-checkbox [checked]="isHeaderFullyVisible(group.parameters)" 
+                    [indeterminate]="isHeaderPartiallyVisible(group.parameters)"
+                    (change)="toggleHeaderVisibility(group.parameters)"
+                    color="primary" style="margin-right: 8px; transform: scale(0.8);">
+                  </mat-checkbox>
                   {{ group.header }}
                 </h4>
                 <div class="form-row">
                   @for (p of group.parameters; track p.key) {
-                    <mat-form-field appearance="outline" class="form-field-half">
-                      <mat-label>{{ p.name }} ({{ p.key }})</mat-label>
-                      <input matInput type="number" [(ngModel)]="inputValues[p.key]">
-                      @if (p.unit) {
-                        <span matSuffix style="padding-right: 8px; color: #94a3b8; font-size: 0.9em;">
-                          {{ p.unit.symbol }}
-                        </span>
-                      }
-                    </mat-form-field>
+                    <div style="display: flex; align-items: center; gap: 8px;" class="form-field-half">
+                      <mat-form-field appearance="outline" style="flex: 1;">
+                        <mat-label>{{ p.name }} ({{ p.key }})</mat-label>
+                        <input matInput type="number" [(ngModel)]="inputValues[p.key]">
+                        @if (p.unit) {
+                          <span matSuffix style="padding-right: 8px; color: #94a3b8; font-size: 0.9em;">
+                            {{ p.unit.symbol }}
+                          </span>
+                        }
+                      </mat-form-field>
+                      <mat-checkbox [checked]="!isReportHidden(p.key)" (change)="toggleReportHidden(p.key)" 
+                        color="primary" matTooltip="Show in Report" style="margin-bottom: 22px;">
+                      </mat-checkbox>
+                    </div>
                   }
                 </div>
               </div>
@@ -96,15 +106,26 @@
             
             @for (group of getGroupedResults(); track group.header) {
               <div style="margin-bottom: 20px;">
-                <h4 style="margin: 0 0 8px 0; color: #0077b6; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(0,180,216,0.2); padding-bottom: 4px;">
+                <h4 style="margin: 0 0 8px 0; color: #0077b6; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(0,180,216,0.2); padding-bottom: 4px; display: flex; align-items: center;">
+                  <mat-checkbox [checked]="isHeaderFullyVisible(group.parameters)" 
+                    [indeterminate]="isHeaderPartiallyVisible(group.parameters)"
+                    (change)="toggleHeaderVisibility(group.parameters)"
+                    color="primary" style="margin-right: 8px; transform: scale(0.8);">
+                  </mat-checkbox>
                   {{ group.header }}
                 </h4>
                 <table style="width:100%; border-collapse: collapse;">
                   @for (param of group.parameters; track param.key) {
                     <tr style="border-bottom: 1px solid rgba(0,0,0,0.03);">
                       <td style="padding: 6px 0;">
-                        <div style="font-weight:500; font-size:0.9rem;">{{ param.name }}</div>
-                        <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">{{ param.key }}</div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <mat-checkbox [checked]="!isReportHidden(param.key)" (change)="toggleReportHidden(param.key)" 
+                            color="primary" matTooltip="Show in Report" style="transform: scale(0.85);"></mat-checkbox>
+                          <div>
+                            <div style="font-weight:500; font-size:0.9rem;">{{ param.name }}</div>
+                            <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">{{ param.key }}</div>
+                          </div>
+                        </div>
                       </td>
                       <td style="padding: 6px 0; text-align:right; font-family:monospace; font-size:1.05rem; color:var(--primary); font-weight: 500;">
                         {{ formatNumber(param.value) }} <span style="font-size:0.85rem; color:var(--text-muted); font-weight:400; margin-left:4px;">{{ param.unit }}</span>

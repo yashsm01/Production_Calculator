@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 
 interface ReportItem {
@@ -28,7 +29,7 @@ interface ReportGroup {
 @Component({
   selector: 'app-product-report',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule, FormsModule, MatTabsModule, MatButtonToggleModule],
+  imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule, FormsModule, MatTabsModule, MatButtonToggleModule, MatSelectModule],
   templateUrl: './product-report.component.html',
   styleUrl: './product-report.component.css'
 })
@@ -38,6 +39,8 @@ export class ProductReportComponent implements OnInit {
   reportGroups: ReportGroup[] = [];
   customTemplate: ReportTemplate | null = null;
   hasCustomTemplate = false;
+  templates: ReportTemplate[] = [];
+  selectedTemplateId = '';
   loading = true;
   error: string | null = null;
 
@@ -95,17 +98,19 @@ export class ProductReportComponent implements OnInit {
             // First build standard report data (so we have parameter maps ready if needed)
             this.buildReport(product, res.parameters);
             
-            // Now check for a custom template
-            this.api.getReportTemplate(product._id as string).subscribe({
-              next: (tpl) => {
-                if (tpl && tpl.cells && tpl.cells.length > 0) {
-                  this.customTemplate = tpl;
+            // Now check for custom templates
+            this.api.getReportTemplatesByProduct(product._id as string).subscribe({
+              next: (tpls) => {
+                if (tpls && tpls.length > 0) {
+                  this.templates = tpls;
+                  this.customTemplate = tpls[0];
+                  this.selectedTemplateId = tpls[0]._id as string;
                   this.hasCustomTemplate = true;
                 }
                 this.loading = false;
               },
               error: () => {
-                // No template found or error, just use standard layout
+                // No templates found or error, just use standard layout
                 this.loading = false;
               }
             });
@@ -121,6 +126,14 @@ export class ProductReportComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  onTemplateChange() {
+    if (!this.selectedTemplateId) return;
+    const selected = this.templates.find(t => t._id === this.selectedTemplateId);
+    if (selected) {
+      this.customTemplate = selected;
+    }
   }
 
   buildReport(product: Product, parameters: Parameter[]): void {

@@ -40,8 +40,12 @@ export class ReportBuilder implements OnInit {
   selectedProductId = '';
   parameters: Parameter[] = [];
   
+  templates: ReportTemplate[] = [];
+  selectedTemplateId = '';
+
   template: ReportTemplate = {
     productId: '',
+    templateName: '',
     rowCount: 10,
     colCount: 4,
     cells: [],
@@ -110,25 +114,66 @@ export class ReportBuilder implements OnInit {
     this.api.getInputVariables(catId).subscribe(res => {
       this.parameters = res.parameters;
       
-      // Fetch existing template
-      this.api.getReportTemplate(this.selectedProductId).subscribe({
-        next: (tpl) => {
-          this.template = tpl;
+      // Fetch existing templates for this product
+      this.api.getReportTemplatesByProduct(this.selectedProductId).subscribe({
+        next: (tpls) => {
+          this.templates = tpls;
           this.loading = false;
         },
         error: (err) => {
-          // Defaults if not found
-          this.template = {
-            productId: this.selectedProductId,
-            rowCount: 10,
-            colCount: 4,
-            cells: [],
-            colWidths: [],
-            rowHeights: []
-          };
+          this.templates = [];
           this.loading = false;
         }
       });
+    });
+  }
+
+  onTemplateChange() {
+    if (!this.selectedTemplateId) return;
+    this.loading = true;
+    this.selectedCells = [];
+    this.selectedCell = null;
+    this.undoStack = [];
+
+    this.api.getReportTemplate(this.selectedTemplateId).subscribe({
+      next: (tpl) => {
+        this.template = tpl;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.snackBar.open('Failed to load template', 'Close', { duration: 3000 });
+        this.loading = false;
+      }
+    });
+  }
+
+  createNewTemplate() {
+    const name = prompt('Enter a name for the new template:');
+    if (!name) return;
+
+    this.loading = true;
+    const newTemplate: Partial<ReportTemplate> = {
+      productId: this.selectedProductId,
+      templateName: name,
+      rowCount: 10,
+      colCount: 4,
+      cells: [],
+      colWidths: [],
+      rowHeights: []
+    };
+
+    this.api.createReportTemplate(newTemplate).subscribe({
+      next: (tpl) => {
+        this.templates.push(tpl);
+        this.selectedTemplateId = tpl._id as string;
+        this.template = tpl;
+        this.snackBar.open('Template created', 'Close', { duration: 3000 });
+        this.loading = false;
+      },
+      error: (err) => {
+        this.snackBar.open('Failed to create template', 'Close', { duration: 3000 });
+        this.loading = false;
+      }
     });
   }
 
@@ -370,9 +415,12 @@ export class ReportBuilder implements OnInit {
   }
 
   saveTemplate() {
-    if (!this.selectedProductId) return;
+    if (!this.selectedTemplateId) {
+      this.snackBar.open('Please select or create a template first.', 'Close', { duration: 3000 });
+      return;
+    }
     this.saving = true;
-    this.api.saveReportTemplate(this.selectedProductId, this.template).subscribe({
+    this.api.saveReportTemplate(this.selectedTemplateId, this.template).subscribe({
       next: (res) => {
         this.template = res;
         this.snackBar.open('Template saved successfully', 'Close', { duration: 3000 });
@@ -386,11 +434,14 @@ export class ReportBuilder implements OnInit {
   }
 
   deleteTemplate() {
-    if (!confirm('Are you sure you want to delete this template and revert to the auto-generated layout?')) return;
+    if (!this.selectedTemplateId) return;
+    if (!confirm('Are you sure you want to delete this template?')) return;
     
-    this.api.deleteReportTemplate(this.selectedProductId).subscribe({
+    this.api.deleteReportTemplate(this.selectedTemplateId).subscribe({
       next: () => {
-        this.template.cells = [];
+        this.templates = this.templates.filter(t => t._id !== this.selectedTemplateId);
+        this.selectedTemplateId = '';
+        this.template = { productId: this.selectedProductId, templateName: '', rowCount: 10, colCount: 4, cells: [], colWidths: [], rowHeights: [] };
         this.snackBar.open('Template deleted', 'Close', { duration: 3000 });
       },
       error: () => this.snackBar.open('Failed to delete', 'Close', { duration: 3000 })

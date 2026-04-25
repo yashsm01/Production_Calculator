@@ -54,7 +54,14 @@ const reportTemplateSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
     required: true,
-    unique: true, // One template per product
+  },
+  templateName: {
+    type: String,
+    required: true,
+    default: 'Default Template'
+  },
+  description: {
+    type: String,
   },
   rowCount: {
     type: Number,

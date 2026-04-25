@@ -57,10 +57,23 @@
             </mat-button-toggle>
           </mat-button-toggle-group>
 
-          <button mat-stroked-button (click)="showHeader = !showHeader" style="font-size:0.85rem; border-color:#cbd5e1; color:#475569;">
-            <mat-icon style="margin-right:4px; font-size:16px; width:16px; height:16px;">{{ showHeader ? 'visibility_off' : 'visibility' }}</mat-icon>
-            {{ showHeader ? 'Hide Header' : 'Show Header' }}
-          </button>
+          <div style="display: flex; gap: 16px; align-items: center;">
+            @if (activeView === 'custom' && templates.length > 1) {
+              <mat-form-field appearance="outline" style="margin-bottom: -1.25em; width: 250px;">
+                <mat-label>Select Template</mat-label>
+                <mat-select [(ngModel)]="selectedTemplateId" (selectionChange)="onTemplateChange()">
+                  @for (tpl of templates; track tpl._id) {
+                    <mat-option [value]="tpl._id">{{ tpl.templateName }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
+
+            <button mat-stroked-button (click)="showHeader = !showHeader" style="font-size:0.85rem; border-color:#cbd5e1; color:#475569;">
+              <mat-icon style="margin-right:4px; font-size:16px; width:16px; height:16px;">{{ showHeader ? 'visibility_off' : 'visibility' }}</mat-icon>
+              {{ showHeader ? 'Hide Header' : 'Show Header' }}
+            </button>
+          </div>
         </div>
 
         @if (activeView === 'custom') {

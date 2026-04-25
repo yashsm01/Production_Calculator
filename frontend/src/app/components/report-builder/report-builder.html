@@ -17,6 +17,21 @@
       </mat-form-field>
 
       @if (selectedProductId) {
+        <mat-form-field appearance="outline" style="width: 100%; max-width: 300px; margin-bottom: -1.25em;">
+          <mat-label>Select Template</mat-label>
+          <mat-select [(ngModel)]="selectedTemplateId" (selectionChange)="onTemplateChange()">
+            @for (tpl of templates; track tpl._id) {
+              <mat-option [value]="tpl._id">{{ tpl.templateName }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-stroked-button color="primary" (click)="createNewTemplate()" style="margin-bottom: -1.25em;">
+          <mat-icon>add</mat-icon> New Template
+        </button>
+      }
+
+      @if (selectedProductId) {
         <div style="display: flex; gap: 12px; align-items: center;">
           <button mat-stroked-button (click)="undo()" [disabled]="undoStack.length === 0" matTooltip="Undo last change">
             <mat-icon>undo</mat-icon> Undo
@@ -30,7 +45,7 @@
           </button>
           
           <button mat-stroked-button color="warn" (click)="deleteTemplate()">
-            <mat-icon>delete</mat-icon> Delete Layout
+            <mat-icon>delete</mat-icon> Delete Template
           </button>
         </div>
       }
@@ -42,7 +57,13 @@
       <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon>
       <p>Loading layout...</p>
     </div>
-  } @else if (selectedProductId) {
+  } @else if (selectedProductId && !selectedTemplateId && !loading) {
+    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+      <mat-icon style="font-size: 48px; width: 48px; height: 48px; margin-bottom: 16px;">post_add</mat-icon>
+      <p style="font-size: 1.2rem;">No template selected.</p>
+      <p>Select a template from the dropdown or create a new one.</p>
+    </div>
+  } @else if (selectedProductId && selectedTemplateId) {
     <div style="display: flex; gap: 24px; align-items: flex-start;">
       
       <!-- LEFT SIDEBAR: Parameters -->

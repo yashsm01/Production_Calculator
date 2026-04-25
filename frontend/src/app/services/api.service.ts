@@ -107,14 +107,20 @@ export class ApiService {
   }
 
   // ── Report Template ─────────────────────────────────────────────────────────
-  getReportTemplate(productId: string): Observable<ReportTemplate> {
-    return this.http.get<ReportTemplate>(`${BASE}/report-template/${productId}`);
+  getReportTemplatesByProduct(productId: string): Observable<ReportTemplate[]> {
+    return this.http.get<ReportTemplate[]>(`${BASE}/report-template/product/${productId}`);
   }
-  saveReportTemplate(productId: string, data: Partial<ReportTemplate>): Observable<ReportTemplate> {
-    return this.http.put<ReportTemplate>(`${BASE}/report-template/${productId}`, data);
+  getReportTemplate(templateId: string): Observable<ReportTemplate> {
+    return this.http.get<ReportTemplate>(`${BASE}/report-template/${templateId}`);
   }
-  deleteReportTemplate(productId: string): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${BASE}/report-template/${productId}`);
+  createReportTemplate(data: Partial<ReportTemplate>): Observable<ReportTemplate> {
+    return this.http.post<ReportTemplate>(`${BASE}/report-template`, data);
+  }
+  saveReportTemplate(templateId: string, data: Partial<ReportTemplate>): Observable<ReportTemplate> {
+    return this.http.put<ReportTemplate>(`${BASE}/report-template/${templateId}`, data);
+  }
+  deleteReportTemplate(templateId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${BASE}/report-template/${templateId}`);
   }
 
   // ── Report History ───────────────────────────────────────────────────────────

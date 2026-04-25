@@ -64,6 +64,8 @@ export interface ReportTemplateCell {
 export interface ReportTemplate {
   _id?: string;
   productId: string;
+  templateName?: string;
+  description?: string;
   rowCount: number;
   colCount: number;
   cells: ReportTemplateCell[];

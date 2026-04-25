@@ -3,7 +3,7 @@ const HeaderInfo = require('../models/HeaderInfo');
 // GET /api/header-info
 exports.getAll = async (req, res, next) => {
   try {
-    const headerInfos = await HeaderInfo.find().sort({ createdAt: -1 });
+    const headerInfos = await HeaderInfo.find().sort({ index: 1, name: 1 });
     res.json(headerInfos);
   } catch (err) {
     next(err);
@@ -24,12 +24,12 @@ exports.getById = async (req, res, next) => {
 // POST /api/header-info
 exports.create = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, index } = req.body;
     
     const existing = await HeaderInfo.findOne({ name });
     if (existing) return res.status(400).json({ message: 'Header Info name already exists' });
 
-    const headerInfo = await HeaderInfo.create({ name, description });
+    const headerInfo = await HeaderInfo.create({ name, description, index: (index || index === 0) ? index : null });
     res.status(201).json(headerInfo);
   } catch (err) {
     next(err);
@@ -39,7 +39,7 @@ exports.create = async (req, res, next) => {
 // PUT /api/header-info/:id
 exports.update = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, index } = req.body;
 
     if (name) {
       const existing = await HeaderInfo.findOne({ name, _id: { $ne: req.params.id } });
@@ -48,7 +48,7 @@ exports.update = async (req, res, next) => {
 
     const headerInfo = await HeaderInfo.findByIdAndUpdate(
       req.params.id,
-      { name, description },
+      { name, description, index: (index || index === 0) ? index : null },
       { new: true, runValidators: true }
     );
     if (!headerInfo) return res.status(404).json({ message: 'Header Info not found' });

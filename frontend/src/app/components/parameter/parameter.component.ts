@@ -46,7 +46,7 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 })
 export class ParameterComponent implements OnInit {
   dataSource = new MatTableDataSource<Parameter>([]);
-  displayedColumns: string[] = ['name', 'key', 'type', 'formula', 'unit', 'headerInfoId', 'categoryId', 'actions'];
+  displayedColumns: string[] = ['index', 'name', 'key', 'type', 'formula', 'unit', 'headerInfoId', 'categoryId', 'actions'];
 
   @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
     this.dataSource.paginator = mp;
@@ -88,6 +88,7 @@ export class ParameterComponent implements OnInit {
     unitId: string;
     headerInfoId: string;
     categoryId: string;
+    index: number | null;
   } = {
     name: '',
     key: '',
@@ -96,6 +97,7 @@ export class ParameterComponent implements OnInit {
     unitId: '',
     headerInfoId: '',
     categoryId: '',
+    index: null,
   };
   editId = '';
 
@@ -282,7 +284,7 @@ export class ParameterComponent implements OnInit {
   openCreate(): void {
     this.editMode = false;
     this.editId = '';
-    this.form = { name: '', key: '', type: 'formula', formula: '', unitId: '', headerInfoId: '', categoryId: '' };
+    this.form = { name: '', key: '', type: 'formula', formula: '', unitId: '', headerInfoId: '', categoryId: '', index: null };
     this.formulaValid = null;
     this.extractedVars = [];
     this.formulaError = '';
@@ -300,6 +302,7 @@ export class ParameterComponent implements OnInit {
       unitId: (param.unit as any)?._id || '',
       headerInfoId: (param.headerInfoId as any)?._id || '',
       categoryId: (param.categoryId as any)?._id || '',
+      index: param.index !== undefined && param.index !== null ? param.index : null,
     };
     this.formulaValid = null;
     this.extractedVars = [];
@@ -340,6 +343,7 @@ export class ParameterComponent implements OnInit {
       unit: this.form.unitId || null,
       headerInfoId: this.form.headerInfoId || null,
       categoryId: this.form.categoryId || null,
+      index: this.form.index,
     };
 
     const req = this.editMode

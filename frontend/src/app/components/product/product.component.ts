@@ -204,7 +204,7 @@ export class ProductComponent implements OnInit {
     if (!this.lastResult || !this.lastResult.product.calculated) return [];
 
     const calculated = this.lastResult.product.calculated;
-    const groups: Record<string, { header: string; parameters: { name: string; key: string; value: number; unit: string }[] }> = {};
+    const groups: Record<string, { headerObj: any; parameters: { name: string; key: string; value: number; unit: string; index: number }[] }> = {};
 
     // Use categoryParameters or create a map for lookup
     const paramMap: Record<string, Parameter> = {};
@@ -213,42 +213,79 @@ export class ProductComponent implements OnInit {
     Object.entries(calculated).forEach(([key, value]) => {
       const p = paramMap[key];
       const headerObj = (p?.headerInfoId as any);
-      const headerName = headerObj?.name || 'Other Calculations';
       const headerId = headerObj?._id || 'other';
 
       if (!groups[headerId]) {
-        groups[headerId] = { header: headerName, parameters: [] };
+        groups[headerId] = { headerObj, parameters: [] };
       }
       
       groups[headerId].parameters.push({
         name: p?.name || key,
         key: key,
         value: value,
-        unit: (p?.unit as any)?.symbol || ''
+        unit: (p?.unit as any)?.symbol || '',
+        index: p?.index || 0
       });
     });
 
-    return Object.values(groups);
+    // Sort parameters within groups
+    Object.values(groups).forEach(g => {
+      g.parameters.sort((a, b) => {
+        if (a.index !== b.index) return a.index - b.index;
+        return a.name.localeCompare(b.name);
+      });
+    });
+
+    // Sort groups
+    const sortedGroups = Object.values(groups).sort((a, b) => {
+      const idxA = a.headerObj?.index || 0;
+      const idxB = b.headerObj?.index || 0;
+      if (idxA !== idxB) return idxA - idxB;
+      const nameA = a.headerObj?.name || 'Other Calculations';
+      const nameB = b.headerObj?.name || 'Other Calculations';
+      return nameA.localeCompare(nameB);
+    });
+
+    return sortedGroups.map(g => ({ header: g.headerObj?.name || 'Other Calculations', parameters: g.parameters }));
   }
 
   getGroupedInputs(): { header: string; parameters: Parameter[] }[] {
-    const groups: Record<string, { header: string; parameters: Parameter[] }> = {};
+    const groups: Record<string, { headerObj: any; parameters: Parameter[] }> = {};
 
     // Map input keys to their full parameter objects
     const inputParams = this.categoryParameters.filter(p => this.inputVariables.includes(p.key));
 
     inputParams.forEach(p => {
       const headerObj = (p.headerInfoId as any);
-      const headerName = headerObj?.name || 'Other Inputs';
       const headerId = headerObj?._id || 'other';
 
       if (!groups[headerId]) {
-        groups[headerId] = { header: headerName, parameters: [] };
+        groups[headerId] = { headerObj, parameters: [] };
       }
       groups[headerId].parameters.push(p);
     });
 
-    return Object.values(groups);
+    // Sort parameters within groups
+    Object.values(groups).forEach(g => {
+      g.parameters.sort((a, b) => {
+        const idxA = a.index || 0;
+        const idxB = b.index || 0;
+        if (idxA !== idxB) return idxA - idxB;
+        return a.name.localeCompare(b.name);
+      });
+    });
+
+    // Sort groups
+    const sortedGroups = Object.values(groups).sort((a, b) => {
+      const idxA = a.headerObj?.index || 0;
+      const idxB = b.headerObj?.index || 0;
+      if (idxA !== idxB) return idxA - idxB;
+      const nameA = a.headerObj?.name || 'Other Inputs';
+      const nameB = b.headerObj?.name || 'Other Inputs';
+      return nameA.localeCompare(nameB);
+    });
+
+    return sortedGroups.map(g => ({ header: g.headerObj?.name || 'Other Inputs', parameters: g.parameters }));
   }
 
   getCalculatedEntries(calculated: Record<string, number>): { key: string; value: number }[] {

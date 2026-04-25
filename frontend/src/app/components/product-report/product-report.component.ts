@@ -13,10 +13,12 @@ interface ReportItem {
   value: number;
   unit: string;
   type: 'input' | 'formula';
+  index: number;
 }
 
 interface ReportGroup {
   header: string;
+  headerObj?: any;
   items: ReportItem[];
 }
 
@@ -81,7 +83,7 @@ export class ProductReportComponent implements OnInit {
   }
 
   buildReport(product: Product, parameters: Parameter[]): void {
-    const groups: Record<string, ReportGroup> = {};
+    const groups: Record<string, { headerObj: any; items: ReportItem[] }> = {};
     const paramMap: Record<string, Parameter> = {};
     parameters.forEach(p => paramMap[p.key] = p);
 
@@ -93,11 +95,10 @@ export class ProductReportComponent implements OnInit {
         if (!p && typeLabel === 'formula') return; 
         
         const headerObj = (p?.headerInfoId as any);
-        const headerName = headerObj?.name || 'Other Specifications';
         const headerId = headerObj?._id || 'other';
 
         if (!groups[headerId]) {
-          groups[headerId] = { header: headerName, items: [] };
+          groups[headerId] = { headerObj, items: [] };
         }
 
         groups[headerId].items.push({
@@ -105,7 +106,8 @@ export class ProductReportComponent implements OnInit {
           key: key,
           value: value,
           unit: (p?.unit as any)?.symbol || '',
-          type: typeLabel
+          type: typeLabel,
+          index: p?.index || 0
         });
       });
     };
@@ -115,18 +117,23 @@ export class ProductReportComponent implements OnInit {
 
     // Convert Record to Array and sort items alphabetically by name
     this.reportGroups = Object.values(groups).map(group => {
-      // Sort so inputs generally appear before formulas, then by name
+      // Sort by index first, then input/formula type, then name
       group.items.sort((a, b) => {
+        if (a.index !== b.index) return a.index - b.index;
         if (a.type !== b.type) {
           return a.type === 'input' ? -1 : 1;
         }
         return a.name.localeCompare(b.name);
       });
-      return group;
+      return { header: group.headerObj?.name || 'Other Specifications', headerObj: group.headerObj, items: group.items };
     });
 
-    // Optionally sort groups by header name
+    // Optionally sort groups by header index and then name
     this.reportGroups.sort((a, b) => {
+      const idxA = a.headerObj?.index || 0;
+      const idxB = b.headerObj?.index || 0;
+      if (idxA !== idxB) return idxA - idxB;
+
       if (a.header === 'Other Specifications') return 1;
       if (b.header === 'Other Specifications') return -1;
       return a.header.localeCompare(b.header);

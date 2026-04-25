@@ -17,6 +17,7 @@ export interface HeaderInfo {
   _id: string;
   name: string;
   description?: string;
+  index?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -30,6 +31,7 @@ export interface Parameter {
   unit?: Unit | null;
   headerInfoId?: HeaderInfo | null;
   categoryId?: Category | null;
+  index?: number;
   createdAt?: string;
   updatedAt?: string;
 }

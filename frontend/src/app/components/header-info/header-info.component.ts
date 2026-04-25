@@ -33,7 +33,7 @@ import { MatCardModule } from '@angular/material/card';
 })
 export class HeaderInfoComponent implements OnInit {
   dataSource = new MatTableDataSource<HeaderInfo>([]);
-  displayedColumns: string[] = ['name', 'description', 'actions'];
+  displayedColumns: string[] = ['index', 'name', 'description', 'actions'];
 
   @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
     this.dataSource.paginator = mp;
@@ -47,7 +47,7 @@ export class HeaderInfoComponent implements OnInit {
   editMode = false;
   saving = false;
 
-  form = { name: '', description: '' };
+  form: { name: string; description: string; index: number | null } = { name: '', description: '', index: null };
   editId = '';
 
   constructor(private api: ApiService, private snackBar: MatSnackBar) {}
@@ -82,14 +82,14 @@ export class HeaderInfoComponent implements OnInit {
   openCreate(): void {
     this.editMode = false;
     this.editId = '';
-    this.form = { name: '', description: '' };
+    this.form = { name: '', description: '', index: null };
     this.formVisible = true;
   }
 
   openEdit(info: HeaderInfo): void {
     this.editMode = true;
     this.editId = info._id;
-    this.form = { name: info.name, description: info.description || '' };
+    this.form = { name: info.name, description: info.description || '', index: info.index !== undefined && info.index !== null ? info.index : null };
     this.formVisible = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }

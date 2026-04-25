@@ -40,6 +40,12 @@ const parameterSchema = new mongoose.Schema(
       ref: 'Category',
       default: null,
     },
+    index: {
+      type: Number,
+      default: null,
+      unique: true,
+      sparse: true,
+    },
   },
   { timestamps: true }
 );

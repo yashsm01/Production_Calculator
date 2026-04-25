@@ -13,6 +13,12 @@ const headerInfoSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    index: {
+      type: Number,
+      default: null,
+      unique: true,
+      sparse: true,
+    },
   },
   { timestamps: true }
 );

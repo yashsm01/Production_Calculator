@@ -29,12 +29,17 @@
         </mat-form-field>
       </div>
 
-      <div style="margin-top: 16px; margin-bottom: 24px;">
-        <mat-radio-group [(ngModel)]="form.type" style="display:flex; gap: 24px;">
-          <mat-radio-button value="input" color="primary">User Input</mat-radio-button>
-          <mat-radio-button value="formula" color="primary">Calculated Formula</mat-radio-button>
-        </mat-radio-group>
-      </div>
+        <div style="margin-top: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+          <mat-radio-group [(ngModel)]="form.type" style="display:flex; gap: 24px;">
+            <mat-radio-button value="input" color="primary">User Input</mat-radio-button>
+            <mat-radio-button value="formula" color="primary">Calculated Formula</mat-radio-button>
+          </mat-radio-group>
+          <mat-form-field appearance="outline" style="width: 200px; margin-bottom: -1.25em;">
+            <mat-label>Index (Priority)</mat-label>
+            <input matInput type="number" [(ngModel)]="form.index" placeholder="e.g. 1">
+            <mat-hint>Lower numbers appear first.</mat-hint>
+          </mat-form-field>
+        </div>
 
       <div class="form-row">
         <mat-form-field appearance="outline" class="form-field-half">
@@ -184,6 +189,11 @@
     } @else {
     <div style="overflow-x: auto;">
       <table mat-table [dataSource]="dataSource" matSort style="width: 100%; min-width:800px;">
+
+        <ng-container matColumnDef="index">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 80px;"> Index </th>
+          <td mat-cell *matCellDef="let element"> {{element.index || 0}} </td>
+        </ng-container>
 
         <ng-container matColumnDef="name">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Name </th>

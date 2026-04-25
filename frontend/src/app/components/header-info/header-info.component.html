@@ -24,6 +24,11 @@
             <mat-label>Description (optional)</mat-label>
             <input matInput [(ngModel)]="form.description">
           </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field-half">
+            <mat-label>Index (Priority)</mat-label>
+            <input matInput type="number" [(ngModel)]="form.index" placeholder="e.g. 1">
+            <mat-hint>Lower numbers appear first.</mat-hint>
+          </mat-form-field>
         </div>
       </mat-card-content>
       <mat-card-actions align="end">
@@ -52,6 +57,11 @@
     } @else {
       <table mat-table [dataSource]="dataSource" matSort style="width: 100%;">
         
+        <ng-container matColumnDef="index">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 80px;"> Index </th>
+          <td mat-cell *matCellDef="let element"> {{element.index || 0}} </td>
+        </ng-container>
+
         <ng-container matColumnDef="name">
           <th mat-header-cell *matHeaderCellDef mat-sort-header> Name </th>
           <td mat-cell *matCellDef="let element" style="font-weight: 500;"> {{element.name}} </td>

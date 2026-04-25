@@ -9,9 +9,12 @@ exports.getAll = async (req, res, next) => {
     if (req.query.categoryId) filter.categoryId = req.query.categoryId;
     const parameters = await Parameter.find(filter)
       .populate('unit', 'name symbol')
-      .populate('headerInfoId', 'name')
+      .populate('headerInfoId', 'name index')
       .populate('categoryId', 'name')
-      .sort({ createdAt: -1 });
+      // .where({ index: { $eq: null } })
+      .sort({ createdAt: 1 });
+    // .sort({ index: 1, name: 1 });
+
     res.json(parameters);
   } catch (err) {
     next(err);
@@ -35,7 +38,7 @@ exports.getById = async (req, res, next) => {
 // POST /api/parameter
 exports.create = async (req, res, next) => {
   try {
-    let { name, key, type, formula, unit, headerInfoId, categoryId } = req.body;
+    let { name, key, type, formula, unit, headerInfoId, categoryId, index } = req.body;
 
     type = type || 'formula';
     if (type === 'input') {
@@ -58,6 +61,7 @@ exports.create = async (req, res, next) => {
       unit: unit || null,
       headerInfoId: headerInfoId || null,
       categoryId: categoryId || null,
+      index: (index || index === 0) ? index : null,
     });
 
     res.status(201).json(parameter);
@@ -69,7 +73,7 @@ exports.create = async (req, res, next) => {
 // PUT /api/parameter/:id
 exports.update = async (req, res, next) => {
   try {
-    let { name, key, type, formula, unit, headerInfoId, categoryId } = req.body;
+    let { name, key, type, formula, unit, headerInfoId, categoryId, index } = req.body;
 
     type = type || 'formula';
     if (type === 'input') {
@@ -91,11 +95,20 @@ exports.update = async (req, res, next) => {
 
     const parameter = await Parameter.findByIdAndUpdate(
       req.params.id,
-      { name, key: key ? key.toLowerCase() : undefined, type, formula, unit: unit || null, headerInfoId: headerInfoId || null, categoryId: categoryId || null },
+      {
+        name,
+        key: key ? key.toLowerCase() : undefined,
+        type,
+        formula,
+        unit: unit || null,
+        headerInfoId: headerInfoId || null,
+        categoryId: categoryId || null,
+        index: (index || index === 0) ? index : null
+      },
       { new: true, runValidators: true }
     )
       .populate('unit', 'name symbol')
-      .populate('headerInfoId', 'name')
+      .populate('headerInfoId', 'name index')
       .populate('categoryId', 'name');
 
     if (!parameter) return res.status(404).json({ message: 'Parameter not found' });
@@ -120,7 +133,7 @@ exports.remove = async (req, res, next) => {
 exports.validateFormulaEndpoint = async (req, res, next) => {
   try {
     const { formula } = req.body;
-    
+
     // Handle empty formula as an input
     if (!formula || formula.trim() === '') {
       return res.json({ valid: true, variables: [], isInput: true });
@@ -130,18 +143,18 @@ exports.validateFormulaEndpoint = async (req, res, next) => {
     if (!valid) return res.status(400).json({ valid: false, error });
 
     const variables = extractVariables(formula);
-    
+
     // Check if variables exist in database
     const allParams = await Parameter.find().select('key');
     const validKeys = allParams.map(p => p.key.toLowerCase());
-    
+
     const missingVars = variables.filter(v => !validKeys.includes(v.toLowerCase()));
-    
+
     if (missingVars.length > 0) {
-      return res.json({ 
-        valid: false, 
+      return res.json({
+        valid: false,
         error: `Variables not found in system: ${missingVars.join(', ')}`,
-        variables 
+        variables
       });
     }
 
@@ -155,9 +168,10 @@ exports.validateFormulaEndpoint = async (req, res, next) => {
 exports.getInputVariables = async (req, res, next) => {
   try {
     const parameters = await Parameter.find()
-      .select('key formula type name headerInfoId unit')
-      .populate('headerInfoId', 'name')
-      .populate('unit', 'name symbol');
+      .select('key formula type name headerInfoId unit index')
+      .populate('headerInfoId', 'name index')
+      .populate('unit', 'name symbol')
+      .sort({ index: 1, name: 1 });
 
     const inputVars = collectAllInputVariables(parameters);
     res.json({ inputVariables: inputVars, parameters });

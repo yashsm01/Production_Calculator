@@ -32,4 +32,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/header-info/header-info.component').then((m) => m.HeaderInfoComponent),
   },
+  {
+    path: 'report-builder',
+    loadComponent: () =>
+      import('./components/report-builder/report-builder').then((m) => m.ReportBuilder),
+  },
 ];

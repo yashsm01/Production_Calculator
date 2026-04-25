@@ -151,6 +151,49 @@
   margin-left: 6px;
 }
 
+/* Custom Template Grid */
+.report-grid {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  margin-bottom: 2rem;
+}
+
+.custom-cell {
+  border: 1px solid #cbd5e1;
+  padding: 8px 12px;
+  min-height: 40px;
+  vertical-align: middle;
+  background: white;
+}
+
+.cell-content {
+  font-size: 1.05rem;
+  color: #0f172a;
+  word-wrap: break-word;
+}
+
+.grid-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: 'Fira Code', monospace;
+  background: #f8fafc;
+  color: #0369a1;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.grid-input:focus {
+  outline: none;
+  border-color: #0ea5e9;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+}
+
 /* ───────────────────────────────────────────────────────── */
 /* Print Specific Styles */
 @media print {
@@ -184,8 +227,8 @@
     display: none !important;
   }
 
-  /* Angular overrides to hide the global toolbar during print */
-  nav.app-nav {
+  /* Angular overrides to hide the global toolbar and tabs during print */
+  nav.app-nav, .mat-mdc-tab-header {
     display: none !important;
   }
 
@@ -201,5 +244,16 @@
   .report-table tr:nth-child(even) {
     background-color: transparent !important;
     border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .grid-input {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-weight: bold;
+    color: inherit;
+    /* remove inner shadow/outline */
+    box-shadow: none;
+    outline: none;
   }
 }

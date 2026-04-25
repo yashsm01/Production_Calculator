@@ -2,10 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../../services/api.service';
-import { Product, Parameter } from '../../models/interfaces';
+import { Product, Parameter, ReportTemplate, ReportTemplateCell } from '../../models/interfaces';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTabsModule } from '@angular/material/tabs';
+import { FormsModule } from '@angular/forms';
 
 interface ReportItem {
   name: string;
@@ -25,7 +27,7 @@ interface ReportGroup {
 @Component({
   selector: 'app-product-report',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule, FormsModule, MatTabsModule],
   templateUrl: './product-report.component.html',
   styleUrl: './product-report.component.css'
 })
@@ -33,6 +35,8 @@ export class ProductReportComponent implements OnInit {
   productId = '';
   product: Product | null = null;
   reportGroups: ReportGroup[] = [];
+  customTemplate: ReportTemplate | null = null;
+  hasCustomTemplate = false;
   loading = true;
   error = '';
 
@@ -66,8 +70,23 @@ export class ProductReportComponent implements OnInit {
         
         this.api.getInputVariables(catId).subscribe({
           next: (res) => {
+            // First build standard report data (so we have parameter maps ready if needed)
             this.buildReport(product, res.parameters);
-            this.loading = false;
+            
+            // Now check for a custom template
+            this.api.getReportTemplate(product._id as string).subscribe({
+              next: (tpl) => {
+                if (tpl && tpl.cells && tpl.cells.length > 0) {
+                  this.customTemplate = tpl;
+                  this.hasCustomTemplate = true;
+                }
+                this.loading = false;
+              },
+              error: () => {
+                // No template found or error, just use standard layout
+                this.loading = false;
+              }
+            });
           },
           error: (err) => {
             this.error = 'Failed to load parameter metadata.';
@@ -149,6 +168,77 @@ export class ProductReportComponent implements OnInit {
     if (n === undefined || n === null) return '—';
     if (Number.isInteger(n)) return n.toLocaleString();
     return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }
+
+  // Helper for custom template rendering
+  getRowsArray(): number[] {
+    if (!this.customTemplate) return [];
+    return Array(this.customTemplate.rowCount).fill(0).map((x, i) => i);
+  }
+
+  getColsArray(): number[] {
+    if (!this.customTemplate) return [];
+    return Array(this.customTemplate.colCount).fill(0).map((x, i) => i);
+  }
+
+  getCell(r: number, c: number): ReportTemplateCell | undefined {
+    return this.customTemplate?.cells.find(cell => cell.row === r && cell.col === c);
+  }
+
+  getCellValue(cell: ReportTemplateCell): string {
+    if (cell.type === 'text') {
+      return cell.content;
+    }
+    
+    // It's a parameter key
+    const key = cell.content;
+    
+    // First check if it's hidden for this product
+    if (this.product?.hiddenParameters?.includes(key)) {
+      return '—';
+    }
+
+    // Input values are handled by the HTML template using ngModel if it's an input.
+    // This is just the fallback for calculated variables or text.
+    if (this.product?.calculated && this.product.calculated[key] !== undefined) {
+      return this.formatNumber(this.product.calculated[key]);
+    }
+    if (this.product?.inputs && this.product.inputs[key] !== undefined) {
+      return this.formatNumber(this.product.inputs[key]);
+    }
+    
+    return '—';
+  }
+
+  isInputParameter(key: string): boolean {
+    if (!this.product || !this.product.inputs) return false;
+    return this.product.inputs.hasOwnProperty(key);
+  }
+
+  recalculate(): void {
+    if (!this.product) return;
+    
+    // Call the backend to upsert the product. The backend engine will recalculate based on updated inputs.
+    // Our API createProduct handles both create and update.
+    const payload = {
+      _id: this.product._id,
+      name: this.product.name,
+      categoryId: (this.product.categoryId as any)._id || this.product.categoryId,
+      inputs: this.product.inputs,
+      hiddenParameters: this.product.hiddenParameters || []
+    };
+
+    this.api.createProduct(payload).subscribe({
+      next: (res) => {
+        // The backend returns the recalculated product
+        this.product = res.product;
+        // The standard report Groups need to be rebuilt in case they are shown
+        // But the custom template just reads directly from this.product, so it updates instantly!
+      },
+      error: (err) => {
+        this.snackBar.open('Error recalculating values.', 'Close', { duration: 3000 });
+      }
+    });
   }
 
   printReport(): void {

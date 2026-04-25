@@ -10,6 +10,7 @@ import {
   EngineResult,
   InputVariablesResult,
   HeaderInfo,
+  ReportTemplate,
 } from '../models/interfaces';
 
 const BASE = '/api';
@@ -102,5 +103,16 @@ export class ApiService {
   }
   deleteProduct(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${BASE}/product/${id}`);
+  }
+
+  // ── Report Template ─────────────────────────────────────────────────────────
+  getReportTemplate(productId: string): Observable<ReportTemplate> {
+    return this.http.get<ReportTemplate>(`${BASE}/report-template/${productId}`);
+  }
+  saveReportTemplate(productId: string, data: Partial<ReportTemplate>): Observable<ReportTemplate> {
+    return this.http.put<ReportTemplate>(`${BASE}/report-template/${productId}`, data);
+  }
+  deleteReportTemplate(productId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${BASE}/report-template/${productId}`);
   }
 }

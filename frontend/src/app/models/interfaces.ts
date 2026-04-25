@@ -47,6 +47,25 @@ export interface Product {
   updatedAt?: string;
 }
 
+export interface ReportTemplateCell {
+  row: number;
+  col: number;
+  type: 'text' | 'parameter';
+  content: string; // text string or parameter key
+  bold?: boolean;
+  align?: 'left' | 'center' | 'right';
+}
+
+export interface ReportTemplate {
+  _id?: string;
+  productId: string;
+  rowCount: number;
+  colCount: number;
+  cells: ReportTemplateCell[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface FormulaValidationResult {
   valid: boolean;
   variables?: string[];

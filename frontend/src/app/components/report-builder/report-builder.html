@@ -1,0 +1,151 @@
+<div class="page-content">
+  <div class="page-header" style="margin-bottom:24px;">
+    <h1 style="margin:0; font-weight:500;">Report Template Builder</h1>
+    <div class="subtitle" style="color:var(--text-muted);">Design custom Excel-like layouts for product reports</div>
+  </div>
+
+  <!-- Product Selection -->
+  <mat-card appearance="outlined" style="margin-bottom: 24px;">
+    <mat-card-content style="padding: 16px 24px;">
+      <mat-form-field appearance="outline" style="width: 100%; max-width: 400px; margin-bottom: -1.25em;">
+        <mat-label>Select Product to Template</mat-label>
+        <mat-select [(ngModel)]="selectedProductId" (selectionChange)="onProductChange()">
+          @for (prod of products; track prod._id) {
+            <mat-option [value]="prod._id">{{ prod.name }} ({{ prod.categoryId?.name }})</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  @if (loading) {
+    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+      <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon>
+      <p>Loading layout...</p>
+    </div>
+  } @else if (selectedProductId) {
+    <div style="display: flex; gap: 24px; align-items: flex-start;">
+      
+      <!-- LEFT SIDEBAR: Parameters -->
+      <div style="width: 300px; flex-shrink: 0;">
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title style="font-size: 1.1rem;">Parameters</mat-card-title>
+            <mat-card-subtitle>Drag into the grid</mat-card-subtitle>
+          </mat-card-header>
+          <mat-divider></mat-divider>
+          <mat-card-content style="padding: 0; max-height: 600px; overflow-y: auto;">
+            <div class="param-list" style="padding: 8px;">
+              @for (group of getGroupedParameters(); track group.header) {
+                <div style="margin-bottom: 16px;">
+                  <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+                    {{ group.header }}
+                  </h4>
+                  @for (p of group.parameters; track p.key) {
+                    <div class="draggable-param" draggable="true" (dragstart)="onDragStart($event, p.key)">
+                      <mat-icon style="color: #94a3b8; margin-right: 8px;">drag_indicator</mat-icon>
+                      <div>
+                        <div style="font-weight: 500; font-size: 0.9rem;">{{ p.name }}</div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-family: monospace;">{{ p.key }}</div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- RIGHT SIDE: Grid Canvas -->
+      <div style="flex: 1; min-width: 0;">
+        <mat-card appearance="outlined">
+          <!-- Toolbar -->
+          <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #f8fafc;">
+            <div style="display: flex; gap: 16px; align-items: center;">
+              <div>
+                <span style="font-size: 0.85rem; color: var(--text-muted); margin-right: 8px;">Rows: {{ template.rowCount }}</span>
+                <button mat-icon-button (click)="removeRow()" [disabled]="template.rowCount <= 1"><mat-icon>remove</mat-icon></button>
+                <button mat-icon-button (click)="addRow()"><mat-icon>add</mat-icon></button>
+              </div>
+              <div>
+                <span style="font-size: 0.85rem; color: var(--text-muted); margin-right: 8px;">Cols: {{ template.colCount }}</span>
+                <button mat-icon-button (click)="removeCol()" [disabled]="template.colCount <= 1"><mat-icon>remove</mat-icon></button>
+                <button mat-icon-button (click)="addCol()"><mat-icon>add</mat-icon></button>
+              </div>
+            </div>
+            <div>
+              <button mat-stroked-button color="warn" (click)="deleteTemplate()" style="margin-right: 8px;">Delete Template</button>
+              <button mat-flat-button color="primary" (click)="saveTemplate()" [disabled]="saving">
+                {{ saving ? 'Saving...' : 'Save Template' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Cell Editor inline toolbar -->
+          @if (selectedCell) {
+            <div style="padding: 16px; border-bottom: 1px solid var(--border); background: #f1f5f9; display: flex; gap: 16px; align-items: center;">
+              <div style="font-family: monospace; font-weight: bold; padding: 4px 8px; background: #e2e8f0; border-radius: 4px;">
+                R{{selectedCell.row + 1}}C{{selectedCell.col + 1}}
+              </div>
+              
+              <mat-form-field appearance="outline" style="margin-bottom: -1.25em; flex: 1;">
+                <mat-label>Content</mat-label>
+                <input matInput [(ngModel)]="cellEditContent" (ngModelChange)="applyCellEdit()" placeholder="Type text or drag param">
+              </mat-form-field>
+
+              <mat-button-toggle-group [(ngModel)]="cellEditBold" (ngModelChange)="applyCellEdit()">
+                <mat-button-toggle [value]="true"><mat-icon>format_bold</mat-icon></mat-button-toggle>
+              </mat-button-toggle-group>
+
+              <mat-button-toggle-group [(ngModel)]="cellEditAlign" (ngModelChange)="applyCellEdit()">
+                <mat-button-toggle value="left"><mat-icon>format_align_left</mat-icon></mat-button-toggle>
+                <mat-button-toggle value="center"><mat-icon>format_align_center</mat-icon></mat-button-toggle>
+                <mat-button-toggle value="right"><mat-icon>format_align_right</mat-icon></mat-button-toggle>
+              </mat-button-toggle-group>
+
+              <button mat-icon-button color="warn" (click)="clearCell()" matTooltip="Clear cell"><mat-icon>clear</mat-icon></button>
+            </div>
+          } @else {
+            <div style="padding: 16px; border-bottom: 1px solid var(--border); background: #f1f5f9; color: #64748b; font-size: 0.9rem;">
+              Click a cell to edit or drag a parameter into it.
+            </div>
+          }
+
+          <!-- Grid -->
+          <div style="padding: 24px; overflow-x: auto;">
+            <table class="report-grid">
+              <tbody>
+                @for (r of getRowsArray(); track r) {
+                  <tr>
+                    @for (c of getColsArray(); track c) {
+                      <td 
+                        [class.selected]="selectedCell?.row === r && selectedCell?.col === c"
+                        (click)="selectCell(r, c)"
+                        (dragover)="onDragOver($event)"
+                        (drop)="onDrop($event, r, c)">
+                        
+                        @if (getCell(r, c); as cell) {
+                          <div [style.font-weight]="cell.bold ? 'bold' : 'normal'"
+                               [style.text-align]="cell.align"
+                               class="cell-content">
+                            @if (cell.type === 'parameter') {
+                              <span class="param-badge">{{ getParameterName(cell.content) }}</span>
+                            } @else {
+                              {{ cell.content }}
+                            }
+                          </div>
+                        }
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+
+    </div>
+  }
+</div>

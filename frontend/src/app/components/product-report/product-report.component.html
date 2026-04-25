@@ -34,37 +34,112 @@
         </p>
       </div>
 
-      <!-- Grouped Sections -->
-      @for (group of reportGroups; track group.header) {
-        <div class="group-section">
-          <div class="group-header">{{ group.header }}</div>
-          
-          <table class="report-table">
-            <tbody>
-              @for (item of group.items; track item.key) {
-                <tr>
-                  <td class="col-name">
-                    <span class="param-name">{{ item.name }}</span>
-                    <span class="param-key">{{ item.key }}</span>
-                  </td>
-                  <td class="col-badge">
-                    @if (item.type === 'input') {
-                      <span class="type-badge badge-input">Input</span>
-                    } @else {
-                      <span class="type-badge badge-formula">Calculated</span>
-                    }
-                  </td>
-                  <td class="col-value">
-                    {{ formatNumber(item.value) }}
-                    @if (item.unit) {
-                      <span class="val-unit">{{ item.unit }}</span>
-                    }
-                  </td>
-                </tr>
+      @if (hasCustomTemplate) {
+        <mat-tab-group animationDuration="0ms" style="margin-top: 1rem;">
+          <!-- TAB 1: Custom Template -->
+          <mat-tab label="Custom Report">
+            <div class="custom-template-wrapper" style="margin-top: 2rem;">
+              <table class="report-grid">
+                <tbody>
+                  @for (r of getRowsArray(); track r) {
+                    <tr>
+                      @for (c of getColsArray(); track c) {
+                        <td class="custom-cell">
+                          @if (getCell(r, c); as cell) {
+                            <div [style.font-weight]="cell.bold ? 'bold' : 'normal'"
+                                 [style.text-align]="cell.align"
+                                 class="cell-content">
+                              @if (cell.type === 'parameter' && isInputParameter(cell.content)) {
+                                <input type="number" 
+                                       class="grid-input"
+                                       [(ngModel)]="product!.inputs[cell.content]" 
+                                       (change)="recalculate()">
+                              } @else {
+                                {{ getCellValue(cell) }}
+                              }
+                            </div>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </mat-tab>
+
+          <!-- TAB 2: Standard Report -->
+          <mat-tab label="Detailed Breakdown">
+            <div class="standard-report-wrapper" style="margin-top: 2rem;">
+              @for (group of reportGroups; track group.header) {
+                <div class="group-section">
+                  <div class="group-header">{{ group.header }}</div>
+                  
+                  <table class="report-table">
+                    <tbody>
+                      @for (item of group.items; track item.key) {
+                        <tr>
+                          <td class="col-name">
+                            <span class="param-name">{{ item.name }}</span>
+                            <span class="param-key">{{ item.key }}</span>
+                          </td>
+                          <td class="col-badge">
+                            @if (item.type === 'input') {
+                              <span class="type-badge badge-input">Input</span>
+                            } @else {
+                              <span class="type-badge badge-formula">Calculated</span>
+                            }
+                          </td>
+                          <td class="col-value">
+                            {{ formatNumber(item.value) }}
+                            @if (item.unit) {
+                              <span class="val-unit">{{ item.unit }}</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
               }
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
+      } @else {
+        <!-- ONLY Standard Grouped Sections -->
+        @if (reportGroups.length > 0) {
+          @for (group of reportGroups; track group.header) {
+            <div class="group-section">
+              <div class="group-header">{{ group.header }}</div>
+              
+              <table class="report-table">
+                <tbody>
+                  @for (item of group.items; track item.key) {
+                    <tr>
+                      <td class="col-name">
+                        <span class="param-name">{{ item.name }}</span>
+                        <span class="param-key">{{ item.key }}</span>
+                      </td>
+                      <td class="col-badge">
+                        @if (item.type === 'input') {
+                          <span class="type-badge badge-input">Input</span>
+                        } @else {
+                          <span class="type-badge badge-formula">Calculated</span>
+                        }
+                      </td>
+                      <td class="col-value">
+                        {{ formatNumber(item.value) }}
+                        @if (item.unit) {
+                          <span class="val-unit">{{ item.unit }}</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
       }
 
       @if (reportGroups.length === 0) {

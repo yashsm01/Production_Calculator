@@ -38,6 +38,14 @@ const cellSchema = new mongoose.Schema({
   thickBorder: {
     type: Boolean,
     default: false,
+  },
+  bgColor: {
+    type: String,
+    default: '',
+  },
+  fontColor: {
+    type: String,
+    default: '',
   }
 }, { _id: false });
 

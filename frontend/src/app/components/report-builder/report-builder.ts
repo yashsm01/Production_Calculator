@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
@@ -62,6 +62,11 @@ export class ReportBuilder implements OnInit {
   cellEditColSpan = 1;
   cellEditRowSpan = 1;
   cellEditThickBorder = false;
+  cellEditBgColor = '';
+  cellEditFontColor = '';
+
+  // Copy/paste clipboard
+  copiedCells: { rowOffset: number; colOffset: number; cell: ReportTemplateCell }[] = [];
 
   // Undo history
   undoStack: ReportTemplateCell[][] = [];
@@ -73,6 +78,12 @@ export class ReportBuilder implements OnInit {
   resizeStartY = 0;
   resizeStartWidth = 0;
   resizeStartHeight = 0;
+
+  // Zoom
+  zoomLevel = 1;
+  zoomIn()  { this.zoomLevel = Math.min(3, +(this.zoomLevel + 0.1).toFixed(1)); }
+  zoomOut() { this.zoomLevel = Math.max(0.3, +(this.zoomLevel - 0.1).toFixed(1)); }
+  zoomReset() { this.zoomLevel = 1; }
 
   constructor(private api: ApiService, private snackBar: MatSnackBar) {}
 
@@ -175,6 +186,8 @@ export class ReportBuilder implements OnInit {
       this.cellEditColSpan = existing.colSpan || 1;
       this.cellEditRowSpan = existing.rowSpan || 1;
       this.cellEditThickBorder = existing.thickBorder || false;
+      this.cellEditBgColor = existing.bgColor || '';
+      this.cellEditFontColor = existing.fontColor || '';
     } else {
       this.cellEditType = 'text';
       this.cellEditContent = '';
@@ -183,6 +196,8 @@ export class ReportBuilder implements OnInit {
       this.cellEditColSpan = 1;
       this.cellEditRowSpan = 1;
       this.cellEditThickBorder = false;
+      this.cellEditBgColor = '';
+      this.cellEditFontColor = '';
     }
   }
 
@@ -246,7 +261,7 @@ export class ReportBuilder implements OnInit {
       }
 
       // Add new if there's content or styling
-      if (contentToApply.trim() !== '' || this.cellEditThickBorder || colSpanToApply > 1 || rowSpanToApply > 1 || this.cellEditBold) {
+      if (contentToApply.trim() !== '' || this.cellEditThickBorder || colSpanToApply > 1 || rowSpanToApply > 1 || this.cellEditBold || this.cellEditBgColor || this.cellEditFontColor) {
         this.template.cells.push({
           row: sc.row,
           col: sc.col,
@@ -256,7 +271,9 @@ export class ReportBuilder implements OnInit {
           align: this.cellEditAlign,
           colSpan: colSpanToApply,
           rowSpan: rowSpanToApply,
-          thickBorder: this.cellEditThickBorder
+          thickBorder: this.cellEditThickBorder,
+          bgColor: this.cellEditBgColor,
+          fontColor: this.cellEditFontColor
         });
       }
     }
@@ -276,7 +293,53 @@ export class ReportBuilder implements OnInit {
     this.cellEditRowSpan = 1;
     this.cellEditThickBorder = false;
     this.cellEditBold = false;
-    // Don't call applyCellEdit because we just want them deleted.
+    this.cellEditBgColor = '';
+    this.cellEditFontColor = '';
+  }
+
+  // -- Copy / Paste ----------------------------------------------------------
+  copySelectedCells(): void {
+    if (!this.selectedCells.length) return;
+    const minRow = Math.min(...this.selectedCells.map(s => s.row));
+    const minCol = Math.min(...this.selectedCells.map(s => s.col));
+    this.copiedCells = [];
+    for (const s of this.selectedCells) {
+      const cell = this.getCell(s.row, s.col);
+      this.copiedCells.push({
+        rowOffset: s.row - minRow,
+        colOffset: s.col - minCol,
+        cell: cell ? JSON.parse(JSON.stringify(cell)) : { row: s.row, col: s.col, type: 'text' as const, content: '' }
+      });
+    }
+    this.snackBar.open('Copied ' + this.copiedCells.length + ' cell(s)', 'Close', { duration: 2000 });
+  }
+
+  pasteSelectedCells(): void {
+    if (!this.copiedCells.length || !this.selectedCell) return;
+    this.saveState();
+    const targetRow = this.selectedCell.row;
+    const targetCol = this.selectedCell.col;
+    for (const copied of this.copiedCells) {
+      const newRow = targetRow + copied.rowOffset;
+      const newCol = targetCol + copied.colOffset;
+      if (newRow >= this.template.rowCount || newCol >= this.template.colCount) continue;
+      const idx = this.template.cells.findIndex(c => c.row === newRow && c.col === newCol);
+      if (idx >= 0) this.template.cells.splice(idx, 1);
+      const c = copied.cell;
+      if (c.content?.trim() !== '' || c.bold || c.thickBorder || (c.colSpan || 1) > 1 || (c.rowSpan || 1) > 1 || c.bgColor || c.fontColor) {
+        this.template.cells.push({ ...c, row: newRow, col: newCol });
+      }
+    }
+    this.snackBar.open('Pasted ' + this.copiedCells.length + ' cell(s)', 'Close', { duration: 2000 });
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  handleKeyboardShortcuts(event: KeyboardEvent): void {
+    const ctrl = event.ctrlKey || event.metaKey;
+    if (!ctrl) return;
+    if (event.key === 'c' || event.key === 'C') { this.copySelectedCells(); }
+    else if (event.key === 'v' || event.key === 'V') { event.preventDefault(); this.pasteSelectedCells(); }
+    else if (event.key === 'z' || event.key === 'Z') { event.preventDefault(); this.undo(); }
   }
 
   isSelected(r: number, c: number): boolean {

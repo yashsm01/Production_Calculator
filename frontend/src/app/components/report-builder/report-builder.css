@@ -21,7 +21,7 @@
 
 .report-grid {
   border-collapse: collapse;
-  width: 100%;
+  width: auto;
   min-width: max-content;
   table-layout: fixed;
 }

@@ -79,10 +79,12 @@
                         <td class="custom-cell"
                             [attr.colspan]="getCell(r, c)?.colSpan || 1"
                             [attr.rowspan]="getCell(r, c)?.rowSpan || 1"
-                            [style.border]="getCell(r, c)?.thickBorder ? '3px solid #0f172a' : '1px solid #cbd5e1'">
+                            [style.border]="getCell(r, c)?.thickBorder ? '3px solid #0f172a' : '1px solid #cbd5e1'"
+                            [style.background]="getCell(r, c)?.bgColor || ''">
                           @if (getCell(r, c); as cell) {
                             <div [style.font-weight]="cell.bold ? 'bold' : 'normal'"
                                  [style.text-align]="cell.align"
+                                 [style.color]="cell.fontColor || ''"
                                  class="cell-content">
                               @if (cell.type === 'parameter' && isInputParameter(cell.content)) {
                                 <input type="number" 

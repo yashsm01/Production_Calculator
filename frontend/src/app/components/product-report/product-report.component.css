@@ -239,6 +239,10 @@
     display: block;
     width: 100%;
     max-width: 100%;
+    /* Ensure bg/font colors print for the entire report area */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
   
   .report-container {
@@ -265,6 +269,10 @@
   .custom-cell {
     min-width: 0 !important; /* Let cells shrink */
     word-break: break-word; /* Wrap text if column is narrow */
+    /* Force browser to print background and font colors */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
   
   .print-controls {

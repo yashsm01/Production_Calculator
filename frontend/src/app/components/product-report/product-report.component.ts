@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FormsModule } from '@angular/forms';
 
 interface ReportItem {
@@ -27,7 +28,7 @@ interface ReportGroup {
 @Component({
   selector: 'app-product-report',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule, FormsModule, MatTabsModule],
+  imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule, FormsModule, MatTabsModule, MatButtonToggleModule],
   templateUrl: './product-report.component.html',
   styleUrl: './product-report.component.css'
 })
@@ -38,7 +39,9 @@ export class ProductReportComponent implements OnInit {
   customTemplate: ReportTemplate | null = null;
   hasCustomTemplate = false;
   loading = true;
-  error = '';
+  error: string | null = null;
+
+  activeView: 'custom' | 'standard' = 'custom';
 
   constructor(
     private route: ActivatedRoute,
@@ -53,6 +56,14 @@ export class ProductReportComponent implements OnInit {
       this.loading = false;
       return;
     }
+    this.route.queryParams.subscribe(params => {
+      if (params['view'] === 'standard') {
+        this.activeView = 'standard';
+      } else if (params['view'] === 'custom') {
+        this.activeView = 'custom';
+      }
+    });
+
     this.productId = id;
     this.loadData();
   }
@@ -183,6 +194,21 @@ export class ProductReportComponent implements OnInit {
 
   getCell(r: number, c: number): ReportTemplateCell | undefined {
     return this.customTemplate?.cells.find(cell => cell.row === r && cell.col === c);
+  }
+
+  isCellHidden(r: number, c: number): boolean {
+    if (!this.customTemplate) return false;
+    for (const cell of this.customTemplate.cells) {
+      const cs = cell.colSpan || 1;
+      const rs = cell.rowSpan || 1;
+      // The origin cell is not hidden
+      if (cell.row === r && cell.col === c) continue;
+      // If the (r, c) falls within the boundary of an expanded cell, it should be hidden
+      if (r >= cell.row && r < cell.row + rs && c >= cell.col && c < cell.col + cs) {
+        return true;
+      }
+    }
+    return false;
   }
 
   getCellValue(cell: ReportTemplateCell): string {

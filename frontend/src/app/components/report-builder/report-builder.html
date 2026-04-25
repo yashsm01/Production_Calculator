@@ -4,9 +4,9 @@
     <div class="subtitle" style="color:var(--text-muted);">Design custom Excel-like layouts for product reports</div>
   </div>
 
-  <!-- Product Selection -->
+  <!-- Product Selection & Actions -->
   <mat-card appearance="outlined" style="margin-bottom: 24px;">
-    <mat-card-content style="padding: 16px 24px;">
+    <mat-card-content style="padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
       <mat-form-field appearance="outline" style="width: 100%; max-width: 400px; margin-bottom: -1.25em;">
         <mat-label>Select Product to Template</mat-label>
         <mat-select [(ngModel)]="selectedProductId" (selectionChange)="onProductChange()">
@@ -15,6 +15,25 @@
           }
         </mat-select>
       </mat-form-field>
+
+      @if (selectedProductId) {
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button mat-stroked-button (click)="undo()" [disabled]="undoStack.length === 0" matTooltip="Undo last change">
+            <mat-icon>undo</mat-icon> Undo
+          </button>
+          <button mat-flat-button color="primary" [disabled]="saving" (click)="saveTemplate()">
+            @if (saving) {
+              <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon> Saving...
+            } @else {
+              <mat-icon>save</mat-icon> Save Template
+            }
+          </button>
+          
+          <button mat-stroked-button color="warn" (click)="deleteTemplate()">
+            <mat-icon>delete</mat-icon> Delete Layout
+          </button>
+        </div>
+      }
     </mat-card-content>
   </mat-card>
 
@@ -84,24 +103,40 @@
 
           <!-- Cell Editor inline toolbar -->
           @if (selectedCell) {
-            <div style="padding: 16px; border-bottom: 1px solid var(--border); background: #f1f5f9; display: flex; gap: 16px; align-items: center;">
+            <div style="padding: 16px; border-bottom: 1px solid var(--border); background: #f1f5f9; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
               <div style="font-family: monospace; font-weight: bold; padding: 4px 8px; background: #e2e8f0; border-radius: 4px;">
                 R{{selectedCell.row + 1}}C{{selectedCell.col + 1}}
               </div>
               
-              <mat-form-field appearance="outline" style="margin-bottom: -1.25em; flex: 1;">
+              <mat-form-field appearance="outline" style="margin-bottom: -1.25em; flex: 1; min-width: 200px;">
                 <mat-label>Content</mat-label>
                 <input matInput [(ngModel)]="cellEditContent" (ngModelChange)="applyCellEdit()" placeholder="Type text or drag param">
               </mat-form-field>
 
               <mat-button-toggle-group [(ngModel)]="cellEditBold" (ngModelChange)="applyCellEdit()">
-                <mat-button-toggle [value]="true"><mat-icon>format_bold</mat-icon></mat-button-toggle>
+                <mat-button-toggle [value]="true" matTooltip="Bold"><mat-icon>format_bold</mat-icon></mat-button-toggle>
               </mat-button-toggle-group>
 
               <mat-button-toggle-group [(ngModel)]="cellEditAlign" (ngModelChange)="applyCellEdit()">
-                <mat-button-toggle value="left"><mat-icon>format_align_left</mat-icon></mat-button-toggle>
-                <mat-button-toggle value="center"><mat-icon>format_align_center</mat-icon></mat-button-toggle>
-                <mat-button-toggle value="right"><mat-icon>format_align_right</mat-icon></mat-button-toggle>
+                <mat-button-toggle value="left" matTooltip="Align Left"><mat-icon>format_align_left</mat-icon></mat-button-toggle>
+                <mat-button-toggle value="center" matTooltip="Align Center"><mat-icon>format_align_center</mat-icon></mat-button-toggle>
+                <mat-button-toggle value="right" matTooltip="Align Right"><mat-icon>format_align_right</mat-icon></mat-button-toggle>
+              </mat-button-toggle-group>
+
+              <div style="border-left: 1px solid #cbd5e1; height: 32px; margin: 0 8px;"></div>
+
+              <div style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px;">
+                <span style="font-size: 0.75rem; color: #64748b; padding: 0 8px;">Col Span:</span>
+                <input type="number" min="1" max="10" [(ngModel)]="cellEditColSpan" (change)="applyCellEdit()" style="width: 40px; border: none; outline: none; text-align: center;">
+              </div>
+
+              <div style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px;">
+                <span style="font-size: 0.75rem; color: #64748b; padding: 0 8px;">Row Span:</span>
+                <input type="number" min="1" max="10" [(ngModel)]="cellEditRowSpan" (change)="applyCellEdit()" style="width: 40px; border: none; outline: none; text-align: center;">
+              </div>
+
+              <mat-button-toggle-group [(ngModel)]="cellEditThickBorder" (ngModelChange)="applyCellEdit()">
+                <mat-button-toggle [value]="true" matTooltip="Thick Border"><mat-icon>border_outer</mat-icon></mat-button-toggle>
               </mat-button-toggle-group>
 
               <button mat-icon-button color="warn" (click)="clearCell()" matTooltip="Clear cell"><mat-icon>clear</mat-icon></button>
@@ -119,24 +154,29 @@
                 @for (r of getRowsArray(); track r) {
                   <tr>
                     @for (c of getColsArray(); track c) {
-                      <td 
-                        [class.selected]="selectedCell?.row === r && selectedCell?.col === c"
-                        (click)="selectCell(r, c)"
-                        (dragover)="onDragOver($event)"
-                        (drop)="onDrop($event, r, c)">
-                        
-                        @if (getCell(r, c); as cell) {
-                          <div [style.font-weight]="cell.bold ? 'bold' : 'normal'"
-                               [style.text-align]="cell.align"
-                               class="cell-content">
-                            @if (cell.type === 'parameter') {
-                              <span class="param-badge">{{ getParameterName(cell.content) }}</span>
-                            } @else {
-                              {{ cell.content }}
-                            }
-                          </div>
-                        }
-                      </td>
+                      @if (!isCellHidden(r, c)) {
+                        <td 
+                          [attr.colspan]="getCell(r, c)?.colSpan || 1"
+                          [attr.rowspan]="getCell(r, c)?.rowSpan || 1"
+                          [class.selected]="isSelected(r, c)"
+                          [style.border]="getCell(r, c)?.thickBorder ? '3px solid #0f172a' : '1px solid #cbd5e1'"
+                          (click)="selectCell(r, c, $event)"
+                          (dragover)="onDragOver($event)"
+                          (drop)="onDrop($event, r, c)">
+                          
+                          @if (getCell(r, c); as cell) {
+                            <div [style.font-weight]="cell.bold ? 'bold' : 'normal'"
+                                 [style.text-align]="cell.align"
+                                 class="cell-content">
+                              @if (cell.type === 'parameter') {
+                                <span class="param-badge">{{ getParameterName(cell.content) }}</span>
+                              } @else {
+                                {{ cell.content }}
+                              }
+                            </div>
+                          }
+                        </td>
+                      }
                     }
                   </tr>
                 }

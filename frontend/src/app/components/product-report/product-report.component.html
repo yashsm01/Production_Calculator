@@ -35,16 +35,31 @@
       </div>
 
       @if (hasCustomTemplate) {
-        <mat-tab-group animationDuration="0ms" style="margin-top: 1rem;">
-          <!-- TAB 1: Custom Template -->
-          <mat-tab label="Custom Report">
-            <div class="custom-template-wrapper" style="margin-top: 2rem;">
-              <table class="report-grid">
-                <tbody>
-                  @for (r of getRowsArray(); track r) {
-                    <tr>
-                      @for (c of getColsArray(); track c) {
-                        <td class="custom-cell">
+        
+        <!-- View Toggle Buttons -->
+        <div style="display: flex; justify-content: center; margin-bottom: 2rem; padding: 1rem 0; border-bottom: 1px solid #e2e8f0;">
+          <mat-button-toggle-group [(ngModel)]="activeView" class="view-toggle">
+            <mat-button-toggle value="custom">
+              <mat-icon style="margin-right: 8px;">grid_on</mat-icon> Excel Report
+            </mat-button-toggle>
+            <mat-button-toggle value="standard">
+              <mat-icon style="margin-right: 8px;">list_alt</mat-icon> Detailed Breakdown
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        @if (activeView === 'custom') {
+          <div class="custom-template-wrapper">
+            <table class="report-grid">
+              <tbody>
+                @for (r of getRowsArray(); track r) {
+                  <tr>
+                    @for (c of getColsArray(); track c) {
+                      @if (!isCellHidden(r, c)) {
+                        <td class="custom-cell"
+                            [attr.colspan]="getCell(r, c)?.colSpan || 1"
+                            [attr.rowspan]="getCell(r, c)?.rowSpan || 1"
+                            [style.border]="getCell(r, c)?.thickBorder ? '3px solid #0f172a' : '1px solid #cbd5e1'">
                           @if (getCell(r, c); as cell) {
                             <div [style.font-weight]="cell.bold ? 'bold' : 'normal'"
                                  [style.text-align]="cell.align"
@@ -61,50 +76,48 @@
                           }
                         </td>
                       }
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          </mat-tab>
-
-          <!-- TAB 2: Standard Report -->
-          <mat-tab label="Detailed Breakdown">
-            <div class="standard-report-wrapper" style="margin-top: 2rem;">
-              @for (group of reportGroups; track group.header) {
-                <div class="group-section">
-                  <div class="group-header">{{ group.header }}</div>
-                  
-                  <table class="report-table">
-                    <tbody>
-                      @for (item of group.items; track item.key) {
-                        <tr>
-                          <td class="col-name">
-                            <span class="param-name">{{ item.name }}</span>
-                            <span class="param-key">{{ item.key }}</span>
-                          </td>
-                          <td class="col-badge">
-                            @if (item.type === 'input') {
-                              <span class="type-badge badge-input">Input</span>
-                            } @else {
-                              <span class="type-badge badge-formula">Calculated</span>
-                            }
-                          </td>
-                          <td class="col-value">
-                            {{ formatNumber(item.value) }}
-                            @if (item.unit) {
-                              <span class="val-unit">{{ item.unit }}</span>
-                            }
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              }
-            </div>
-          </mat-tab>
-        </mat-tab-group>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="standard-report-wrapper">
+            @for (group of reportGroups; track group.header) {
+              <div class="group-section">
+                <div class="group-header">{{ group.header }}</div>
+                
+                <table class="report-table">
+                  <tbody>
+                    @for (item of group.items; track item.key) {
+                      <tr>
+                        <td class="col-name">
+                          <span class="param-name">{{ item.name }}</span>
+                          <span class="param-key">{{ item.key }}</span>
+                        </td>
+                        <td class="col-badge">
+                          @if (item.type === 'input') {
+                            <span class="type-badge badge-input">Input</span>
+                          } @else {
+                            <span class="type-badge badge-formula">Calculated</span>
+                          }
+                        </td>
+                        <td class="col-value">
+                          {{ formatNumber(item.value) }}
+                          @if (item.unit) {
+                            <span class="val-unit">{{ item.unit }}</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+        
       } @else {
         <!-- ONLY Standard Grouped Sections -->
         @if (reportGroups.length > 0) {

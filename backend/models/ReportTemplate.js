@@ -26,6 +26,18 @@ const cellSchema = new mongoose.Schema({
     type: String,
     enum: ['left', 'center', 'right'],
     default: 'left',
+  },
+  colSpan: {
+    type: Number,
+    default: 1,
+  },
+  rowSpan: {
+    type: Number,
+    default: 1,
+  },
+  thickBorder: {
+    type: Boolean,
+    default: false,
   }
 }, { _id: false });
 

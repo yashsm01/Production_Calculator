@@ -13,8 +13,8 @@
 
 .report-container {
   background: white;
-  width: 210mm;
-  min-height: 297mm;
+  width: 297mm; /* A4 Landscape Width */
+  min-height: 210mm; /* A4 Landscape Height */
   padding: 20mm;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
   position: relative;
@@ -152,9 +152,15 @@
 }
 
 /* Custom Template Grid */
+.custom-template-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
 .report-grid {
   border-collapse: collapse;
   width: 100%;
+  min-width: max-content;
   table-layout: fixed;
   margin-bottom: 2rem;
 }
@@ -163,6 +169,7 @@
   border: 1px solid #cbd5e1;
   padding: 8px 12px;
   min-height: 40px;
+  min-width: 120px;
   vertical-align: middle;
   background: white;
 }
@@ -198,8 +205,8 @@
 /* Print Specific Styles */
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 15mm;
+    size: A4 landscape;
+    margin: 10mm;
   }
   
   html, body {
@@ -213,6 +220,8 @@
     background: transparent;
     padding: 0;
     display: block;
+    width: 100%;
+    max-width: 100%;
   }
   
   .report-container {
@@ -223,12 +232,30 @@
     page-break-after: auto;
   }
   
+  .custom-template-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible; /* Let it print naturally */
+  }
+  
+  .report-grid {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important; /* Force it to shrink to page */
+    table-layout: fixed;
+  }
+
+  .custom-cell {
+    min-width: 0 !important; /* Let cells shrink */
+    word-break: break-word; /* Wrap text if column is narrow */
+  }
+  
   .print-controls {
     display: none !important;
   }
 
   /* Angular overrides to hide the global toolbar and tabs during print */
-  nav.app-nav, .mat-mdc-tab-header {
+  nav.app-nav, .mat-mdc-tab-header, .view-toggle {
     display: none !important;
   }
 

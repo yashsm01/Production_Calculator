@@ -54,6 +54,9 @@ export interface ReportTemplateCell {
   content: string; // text string or parameter key
   bold?: boolean;
   align?: 'left' | 'center' | 'right';
+  colSpan?: number;
+  rowSpan?: number;
+  thickBorder?: boolean;
 }
 
 export interface ReportTemplate {

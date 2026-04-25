@@ -22,6 +22,7 @@
 .report-grid {
   border-collapse: collapse;
   width: 100%;
+  min-width: max-content;
   table-layout: fixed;
 }
 
@@ -32,7 +33,7 @@
   cursor: cell;
   position: relative;
   background: white;
-  min-width: 100px;
+  min-width: 120px;
   transition: background 0.1s;
 }
 

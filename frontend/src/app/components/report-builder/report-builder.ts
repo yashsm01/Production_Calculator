@@ -51,11 +51,18 @@ export class ReportBuilder implements OnInit {
   saving = false;
 
   // Selected cell for editing
+  selectedCells: { row: number, col: number }[] = [];
   selectedCell: { row: number, col: number } | null = null;
   cellEditType: 'text' | 'parameter' = 'text';
   cellEditContent = '';
   cellEditBold = false;
   cellEditAlign: 'left' | 'center' | 'right' = 'left';
+  cellEditColSpan = 1;
+  cellEditRowSpan = 1;
+  cellEditThickBorder = false;
+
+  // Undo history
+  undoStack: ReportTemplateCell[][] = [];
 
   constructor(private api: ApiService, private snackBar: MatSnackBar) {}
 
@@ -67,7 +74,9 @@ export class ReportBuilder implements OnInit {
     if (!this.selectedProductId) return;
     this.loading = true;
     this.parameters = [];
+    this.selectedCells = [];
     this.selectedCell = null;
+    this.undoStack = [];
     
     // Find selected product
     const product = this.products.find(p => p._id === this.selectedProductId);
@@ -112,46 +121,154 @@ export class ReportBuilder implements OnInit {
     return this.template.cells.find(cell => cell.row === r && cell.col === c);
   }
 
-  selectCell(r: number, c: number) {
-    this.selectedCell = { row: r, col: c };
-    const existing = this.getCell(r, c);
+  selectCell(r: number, c: number, event: MouseEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      // Toggle selection
+      const idx = this.selectedCells.findIndex(sc => sc.row === r && sc.col === c);
+      if (idx >= 0) {
+        this.selectedCells.splice(idx, 1);
+      } else {
+        this.selectedCells.push({ row: r, col: c });
+      }
+    } else if (event.shiftKey && this.selectedCells.length > 0) {
+      // Range selection from the primary cell (last selected or first in array)
+      const primary = this.selectedCell || this.selectedCells[0];
+      const minRow = Math.min(primary.row, r);
+      const maxRow = Math.max(primary.row, r);
+      const minCol = Math.min(primary.col, c);
+      const maxCol = Math.max(primary.col, c);
+      
+      this.selectedCells = [];
+      for (let row = minRow; row <= maxRow; row++) {
+        for (let col = minCol; col <= maxCol; col++) {
+          this.selectedCells.push({ row, col });
+        }
+      }
+    } else {
+      // Single selection
+      this.selectedCells = [{ row: r, col: c }];
+    }
+
+    // Set the primary selected cell
+    this.selectedCell = this.selectedCells.length > 0 ? this.selectedCells[this.selectedCells.length - 1] : null;
+
+    if (!this.selectedCell) return;
+
+    const existing = this.getCell(this.selectedCell.row, this.selectedCell.col);
     if (existing) {
       this.cellEditType = existing.type;
       this.cellEditContent = existing.content;
       this.cellEditBold = existing.bold || false;
       this.cellEditAlign = existing.align || 'left';
+      this.cellEditColSpan = existing.colSpan || 1;
+      this.cellEditRowSpan = existing.rowSpan || 1;
+      this.cellEditThickBorder = existing.thickBorder || false;
     } else {
       this.cellEditType = 'text';
       this.cellEditContent = '';
       this.cellEditBold = false;
       this.cellEditAlign = 'left';
+      this.cellEditColSpan = 1;
+      this.cellEditRowSpan = 1;
+      this.cellEditThickBorder = false;
+    }
+  }
+
+  saveState() {
+    // Save a deep copy of the current cells to the undo stack
+    this.undoStack.push(JSON.parse(JSON.stringify(this.template.cells)));
+    // Limit stack size to prevent memory issues
+    if (this.undoStack.length > 50) {
+      this.undoStack.shift();
+    }
+  }
+
+  undo() {
+    if (this.undoStack.length === 0) return;
+    // Pop the last state and restore it
+    const lastState = this.undoStack.pop();
+    if (lastState) {
+      this.template.cells = lastState;
+      // Re-evaluate selected cell toolbar state
+      if (this.selectedCell) {
+        // Just re-trigger the selection to update the toolbar
+        this.selectCell(this.selectedCell.row, this.selectedCell.col, { ctrlKey: false, shiftKey: false, metaKey: false } as MouseEvent);
+      }
     }
   }
 
   applyCellEdit() {
-    if (!this.selectedCell) return;
+    if (!this.selectedCells || this.selectedCells.length === 0) return;
     
-    // Remove existing if any
-    this.template.cells = this.template.cells.filter(
-      c => !(c.row === this.selectedCell!.row && c.col === this.selectedCell!.col)
-    );
+    this.saveState();
+    
+    for (const sc of this.selectedCells) {
+      // Find existing cell
+      const existingIdx = this.template.cells.findIndex(c => c.row === sc.row && c.col === sc.col);
+      
+      // The primary cell gets the text content, type, colSpan, rowSpan.
+      // Other selected cells ONLY get the styling (bold, align, thickBorder).
+      const isPrimary = this.selectedCell && sc.row === this.selectedCell.row && sc.col === this.selectedCell.col;
+      
+      let contentToApply = '';
+      let colSpanToApply = 1;
+      let rowSpanToApply = 1;
+      let typeToApply: 'text' | 'parameter' = 'text';
+      
+      if (isPrimary) {
+        contentToApply = this.cellEditContent;
+        colSpanToApply = this.cellEditColSpan;
+        rowSpanToApply = this.cellEditRowSpan;
+        typeToApply = this.cellEditType;
+      } else {
+        const existing = this.getCell(sc.row, sc.col);
+        contentToApply = existing ? existing.content : '';
+        colSpanToApply = existing ? (existing.colSpan || 1) : 1;
+        rowSpanToApply = existing ? (existing.rowSpan || 1) : 1;
+        typeToApply = existing ? existing.type : 'text';
+      }
 
-    // Add new if there's content
-    if (this.cellEditContent.trim() !== '') {
-      this.template.cells.push({
-        row: this.selectedCell.row,
-        col: this.selectedCell.col,
-        type: this.cellEditType,
-        content: this.cellEditContent,
-        bold: this.cellEditBold,
-        align: this.cellEditAlign
-      });
+      // Remove existing to replace it
+      if (existingIdx >= 0) {
+        this.template.cells.splice(existingIdx, 1);
+      }
+
+      // Add new if there's content or styling
+      if (contentToApply.trim() !== '' || this.cellEditThickBorder || colSpanToApply > 1 || rowSpanToApply > 1 || this.cellEditBold) {
+        this.template.cells.push({
+          row: sc.row,
+          col: sc.col,
+          type: typeToApply,
+          content: contentToApply,
+          bold: this.cellEditBold,
+          align: this.cellEditAlign,
+          colSpan: colSpanToApply,
+          rowSpan: rowSpanToApply,
+          thickBorder: this.cellEditThickBorder
+        });
+      }
     }
   }
 
   clearCell() {
+    if (!this.selectedCells || this.selectedCells.length === 0) return;
+    
+    this.saveState();
+
+    for (const sc of this.selectedCells) {
+      this.template.cells = this.template.cells.filter(c => !(c.row === sc.row && c.col === sc.col));
+    }
+    
     this.cellEditContent = '';
-    this.applyCellEdit();
+    this.cellEditColSpan = 1;
+    this.cellEditRowSpan = 1;
+    this.cellEditThickBorder = false;
+    this.cellEditBold = false;
+    // Don't call applyCellEdit because we just want them deleted.
+  }
+
+  isSelected(r: number, c: number): boolean {
+    return this.selectedCells.findIndex(sc => sc.row === r && sc.col === c) >= 0;
   }
 
   // --- HTML5 Drag and Drop Handlers ---
@@ -169,8 +286,8 @@ export class ReportBuilder implements OnInit {
     event.preventDefault();
     const paramKey = event.dataTransfer?.getData('text/plain');
     if (paramKey) {
-      // Find and update the cell
-      this.selectCell(r, c);
+      // Find and update the cell as primary
+      this.selectCell(r, c, { ctrlKey: false, shiftKey: false, metaKey: false } as MouseEvent);
       this.cellEditType = 'parameter';
       this.cellEditContent = paramKey;
       this.applyCellEdit();
@@ -210,6 +327,20 @@ export class ReportBuilder implements OnInit {
   removeRow() { if (this.template.rowCount > 1) this.template.rowCount--; }
   addCol() { this.template.colCount++; }
   removeCol() { if (this.template.colCount > 1) this.template.colCount--; }
+
+  isCellHidden(r: number, c: number): boolean {
+    for (const cell of this.template.cells) {
+      const cs = cell.colSpan || 1;
+      const rs = cell.rowSpan || 1;
+      // The origin cell is not hidden
+      if (cell.row === r && cell.col === c) continue;
+      // If the (r, c) falls within the boundary of an expanded cell, it should be hidden
+      if (r >= cell.row && r < cell.row + rs && c >= cell.col && c < cell.col + cs) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   getParameterName(key: string): string {
     const p = this.parameters.find(x => x.key === key);

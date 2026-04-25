@@ -58,6 +58,14 @@ const reportTemplateSchema = new mongoose.Schema({
     required: true,
     default: 4,
   },
+  colWidths: {
+    type: [Number],
+    default: [],
+  },
+  rowHeights: {
+    type: [Number],
+    default: [],
+  },
   cells: [cellSchema],
 }, { timestamps: true });
 

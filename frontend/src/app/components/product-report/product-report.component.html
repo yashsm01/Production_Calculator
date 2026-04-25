@@ -9,6 +9,10 @@
     <button mat-stroked-button (click)="printReport()" style="padding: 16px 32px; border-radius: 12px; background: white; border-color: #cbd5e1;">
       <mat-icon style="margin-right: 8px;">print</mat-icon> Print Only
     </button>
+    <button mat-stroked-button (click)="showHeader = !showHeader" style="padding: 16px 32px; border-radius: 12px; background: white; border-color: #cbd5e1;">
+      <mat-icon style="margin-right: 8px;">{{ showHeader ? 'visibility_off' : 'visibility' }}</mat-icon>
+      {{ showHeader ? 'Hide Header' : 'Show Header' }}
+    </button>
     <a mat-stroked-button routerLink="/product" style="padding: 16px 32px; border-radius: 12px; color: #475569; border-color: #cbd5e1; background: white;">
       <mat-icon style="margin-right: 8px;">arrow_back</mat-icon> Back to Products
     </a>
@@ -28,20 +32,22 @@
       </div>
     } @else if (product) {
       
-      <!-- Document Header -->
-      <div class="doc-header">
-        <h1 class="doc-title">{{ product.name }}</h1>
-        <p class="doc-meta">
-          <strong>Category:</strong> {{ product.categoryId.name || '—' }} 
-          &nbsp;&bull;&nbsp; 
-          <strong>Date Generated:</strong> {{ (product.createdAt | date:'medium') || 'Just Now' }}
-        </p>
-      </div>
+      <!-- Document Header (toggleable) -->
+      @if (showHeader) {
+        <div class="doc-header">
+          <h1 class="doc-title">{{ product.name }}</h1>
+          <p class="doc-meta">
+            <strong>Category:</strong> {{ product.categoryId.name || '—' }} 
+            &nbsp;&bull;&nbsp; 
+            <strong>Date Generated:</strong> {{ (product.createdAt | date:'medium') || 'Just Now' }}
+          </p>
+        </div>
+      }
 
       @if (hasCustomTemplate) {
         
         <!-- View Toggle Buttons -->
-        <div style="display: flex; justify-content: center; margin-bottom: 2rem; padding: 1rem 0; border-bottom: 1px solid #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 1rem 0; border-bottom: 1px solid #e2e8f0;">
           <mat-button-toggle-group [(ngModel)]="activeView" class="view-toggle">
             <mat-button-toggle value="custom">
               <mat-icon style="margin-right: 8px;">grid_on</mat-icon> Excel Report
@@ -50,14 +56,24 @@
               <mat-icon style="margin-right: 8px;">list_alt</mat-icon> Detailed Breakdown
             </mat-button-toggle>
           </mat-button-toggle-group>
+
+          <button mat-stroked-button (click)="showHeader = !showHeader" style="font-size:0.85rem; border-color:#cbd5e1; color:#475569;">
+            <mat-icon style="margin-right:4px; font-size:16px; width:16px; height:16px;">{{ showHeader ? 'visibility_off' : 'visibility' }}</mat-icon>
+            {{ showHeader ? 'Hide Header' : 'Show Header' }}
+          </button>
         </div>
 
         @if (activeView === 'custom') {
           <div class="custom-template-wrapper">
             <table class="report-grid">
+              <colgroup>
+                @for (c of getColsArray(); track c) {
+                  <col [style.width.px]="getColWidth(c)">
+                }
+              </colgroup>
               <tbody>
                 @for (r of getRowsArray(); track r) {
-                  <tr>
+                  <tr [style.height.px]="getRowHeight(r)">
                     @for (c of getColsArray(); track c) {
                       @if (!isCellHidden(r, c)) {
                         <td class="custom-cell"
@@ -90,33 +106,41 @@
           <div class="standard-report-wrapper">
             @for (group of reportGroups; track group.header) {
               <div class="group-section">
-                <div class="group-header">{{ group.header }}</div>
+                <div class="group-header group-header-clickable" (click)="toggleGroup(group.header)">
+                  <span>{{ group.header }}</span>
+                  <mat-icon style="font-size:18px; width:18px; height:18px; vertical-align:middle; transition:transform 0.2s;"
+                            [style.transform]="collapsedGroups.has(group.header) ? 'rotate(-90deg)' : 'rotate(0deg)'">
+                    expand_more
+                  </mat-icon>
+                </div>
                 
-                <table class="report-table">
-                  <tbody>
-                    @for (item of group.items; track item.key) {
-                      <tr>
-                        <td class="col-name">
-                          <span class="param-name">{{ item.name }}</span>
-                          <span class="param-key">{{ item.key }}</span>
-                        </td>
-                        <td class="col-badge">
-                          @if (item.type === 'input') {
-                            <span class="type-badge badge-input">Input</span>
-                          } @else {
-                            <span class="type-badge badge-formula">Calculated</span>
-                          }
-                        </td>
-                        <td class="col-value">
-                          {{ formatNumber(item.value) }}
-                          @if (item.unit) {
-                            <span class="val-unit">{{ item.unit }}</span>
-                          }
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                @if (!collapsedGroups.has(group.header)) {
+                  <table class="report-table">
+                    <tbody>
+                      @for (item of group.items; track item.key) {
+                        <tr>
+                          <td class="col-name">
+                            <span class="param-name">{{ item.name }}</span>
+                            <span class="param-key">{{ item.key }}</span>
+                          </td>
+                          <td class="col-badge">
+                            @if (item.type === 'input') {
+                              <span class="type-badge badge-input">Input</span>
+                            } @else {
+                              <span class="type-badge badge-formula">Calculated</span>
+                            }
+                          </td>
+                          <td class="col-value">
+                            {{ formatNumber(item.value) }}
+                            @if (item.unit) {
+                              <span class="val-unit">{{ item.unit }}</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                }
               </div>
             }
           </div>

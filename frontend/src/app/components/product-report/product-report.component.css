@@ -72,6 +72,23 @@
   letter-spacing: 0.05em;
 }
 
+.group-header-clickable {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin: 0 -6px 1.5rem -6px;
+  border-bottom: 1px solid #cbd5e1;
+  transition: background 0.15s;
+}
+
+.group-header-clickable:hover {
+  background: #f0f9ff;
+}
+
 /* Data Table */
 .report-table {
   width: 100%;

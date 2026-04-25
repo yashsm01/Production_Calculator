@@ -57,6 +57,8 @@ export interface ReportTemplateCell {
   colSpan?: number;
   rowSpan?: number;
   thickBorder?: boolean;
+  bgColor?: string;
+  fontColor?: string;
 }
 
 export interface ReportTemplate {
@@ -65,6 +67,8 @@ export interface ReportTemplate {
   rowCount: number;
   colCount: number;
   cells: ReportTemplateCell[];
+  colWidths?: number[];
+  rowHeights?: number[];
   createdAt?: string;
   updatedAt?: string;
 }

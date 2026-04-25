@@ -43,6 +43,16 @@ export class ProductReportComponent implements OnInit {
 
   activeView: 'custom' | 'standard' = 'custom';
   savingHistory = false;
+  showHeader = true;
+  collapsedGroups = new Set<string>();
+
+  toggleGroup(header: string): void {
+    if (this.collapsedGroups.has(header)) {
+      this.collapsedGroups.delete(header);
+    } else {
+      this.collapsedGroups.add(header);
+    }
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -195,6 +205,19 @@ export class ProductReportComponent implements OnInit {
 
   getCell(r: number, c: number): ReportTemplateCell | undefined {
     return this.customTemplate?.cells.find(cell => cell.row === r && cell.col === c);
+  }
+
+  getColWidth(c: number): number {
+    return (this.customTemplate?.colWidths && this.customTemplate.colWidths[c]) || 150;
+  }
+
+  getRowHeight(r: number): number {
+    return (this.customTemplate?.rowHeights && this.customTemplate.rowHeights[r]) || 40;
+  }
+
+  getColsForGroup(): number[] {
+    if (!this.customTemplate) return [];
+    return this.getColsArray();
   }
 
   isCellHidden(r: number, c: number): boolean {

@@ -44,7 +44,9 @@ export class ReportBuilder implements OnInit {
     productId: '',
     rowCount: 10,
     colCount: 4,
-    cells: []
+    cells: [],
+    colWidths: [],
+    rowHeights: []
   };
 
   loading = false;
@@ -63,6 +65,14 @@ export class ReportBuilder implements OnInit {
 
   // Undo history
   undoStack: ReportTemplateCell[][] = [];
+
+  // Resize state
+  resizingCol: number | null = null;
+  resizingRow: number | null = null;
+  resizeStartX = 0;
+  resizeStartY = 0;
+  resizeStartWidth = 0;
+  resizeStartHeight = 0;
 
   constructor(private api: ApiService, private snackBar: MatSnackBar) {}
 
@@ -101,7 +111,9 @@ export class ReportBuilder implements OnInit {
             productId: this.selectedProductId,
             rowCount: 10,
             colCount: 4,
-            cells: []
+            cells: [],
+            colWidths: [],
+            rowHeights: []
           };
           this.loading = false;
         }
@@ -323,10 +335,95 @@ export class ReportBuilder implements OnInit {
   }
 
   // Grid sizing
-  addRow() { this.template.rowCount++; }
-  removeRow() { if (this.template.rowCount > 1) this.template.rowCount--; }
-  addCol() { this.template.colCount++; }
-  removeCol() { if (this.template.colCount > 1) this.template.colCount--; }
+  addRow() {
+    this.template.rowCount++;
+    if (!this.template.rowHeights) this.template.rowHeights = [];
+  }
+  removeRow() {
+    if (this.template.rowCount > 1) {
+      this.template.rowCount--;
+      if (this.template.rowHeights) this.template.rowHeights.pop();
+    }
+  }
+  addCol() {
+    this.template.colCount++;
+    if (!this.template.colWidths) this.template.colWidths = [];
+  }
+  removeCol() {
+    if (this.template.colCount > 1) {
+      this.template.colCount--;
+      if (this.template.colWidths) this.template.colWidths.pop();
+    }
+  }
+
+  // ── Resize helpers ──────────────────────────────────────────────────────
+  getColWidth(c: number): number {
+    return (this.template.colWidths && this.template.colWidths[c]) || 150;
+  }
+
+  getRowHeight(r: number): number {
+    return (this.template.rowHeights && this.template.rowHeights[r]) || 40;
+  }
+
+  startColResize(event: MouseEvent, colIndex: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizingCol = colIndex;
+    this.resizeStartX = event.clientX;
+    this.resizeStartWidth = this.getColWidth(colIndex);
+
+    const onMove = (e: MouseEvent) => {
+      if (this.resizingCol === null) return;
+      const delta = e.clientX - this.resizeStartX;
+      const newWidth = Math.max(40, this.resizeStartWidth + delta);
+      if (!this.template.colWidths) this.template.colWidths = [];
+      // Pad array if needed
+      while (this.template.colWidths.length <= this.resizingCol) {
+        this.template.colWidths.push(150);
+      }
+      this.template.colWidths[this.resizingCol] = newWidth;
+      // Force Angular change detection
+      this.template = { ...this.template, colWidths: [...this.template.colWidths] };
+    };
+
+    const onUp = () => {
+      this.resizingCol = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
+
+  startRowResize(event: MouseEvent, rowIndex: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizingRow = rowIndex;
+    this.resizeStartY = event.clientY;
+    this.resizeStartHeight = this.getRowHeight(rowIndex);
+
+    const onMove = (e: MouseEvent) => {
+      if (this.resizingRow === null) return;
+      const delta = e.clientY - this.resizeStartY;
+      const newHeight = Math.max(24, this.resizeStartHeight + delta);
+      if (!this.template.rowHeights) this.template.rowHeights = [];
+      while (this.template.rowHeights.length <= this.resizingRow) {
+        this.template.rowHeights.push(40);
+      }
+      this.template.rowHeights[this.resizingRow] = newHeight;
+      this.template = { ...this.template, rowHeights: [...this.template.rowHeights] };
+    };
+
+    const onUp = () => {
+      this.resizingRow = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
 
   isCellHidden(r: number, c: number): boolean {
     for (const cell of this.template.cells) {

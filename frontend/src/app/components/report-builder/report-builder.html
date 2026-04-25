@@ -149,10 +149,41 @@
 
           <!-- Grid -->
           <div style="padding: 24px; overflow-x: auto;">
-            <table class="report-grid">
+            <table class="report-grid" style="border-collapse: collapse;">
+              <!-- colgroup to enforce widths -->
+              <colgroup>
+                <col style="width: 20px;"><!-- row-resize handle column -->
+                @for (c of getColsArray(); track c) {
+                  <col [style.width.px]="getColWidth(c)">
+                }
+              </colgroup>
+
+              <!-- Column header row with resize handles -->
+              <thead>
+                <tr style="height: 18px;">
+                  <th style="background:#e2e8f0; border:1px solid #cbd5e1; width:20px;"></th>
+                  @for (c of getColsArray(); track c) {
+                    <th style="background:#e2e8f0; border:1px solid #cbd5e1; position:relative; padding:0; min-width:40px; user-select:none;">
+                      <span style="display:block; text-align:center; font-size:0.65rem; color:#64748b; line-height:18px;">{{ c + 1 }}</span>
+                      <!-- Column resize handle -->
+                      <div class="col-resize-handle"
+                           (mousedown)="startColResize($event, c)">
+                      </div>
+                    </th>
+                  }
+                </tr>
+              </thead>
+
               <tbody>
                 @for (r of getRowsArray(); track r) {
-                  <tr>
+                  <tr [style.height.px]="getRowHeight(r)">
+                    <!-- Row resize handle cell -->
+                    <td style="background:#e2e8f0; border:1px solid #cbd5e1; width:20px; padding:0; position:relative; user-select:none;">
+                      <span style="display:block; text-align:center; font-size:0.6rem; color:#64748b; line-height:1;">{{ r + 1 }}</span>
+                      <div class="row-resize-handle"
+                           (mousedown)="startRowResize($event, r)">
+                      </div>
+                    </td>
                     @for (c of getColsArray(); track c) {
                       @if (!isCellHidden(r, c)) {
                         <td 

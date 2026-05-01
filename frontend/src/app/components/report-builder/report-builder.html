@@ -11,7 +11,7 @@
         <mat-label>Select Product to Template</mat-label>
         <mat-select [(ngModel)]="selectedProductId" (selectionChange)="onProductChange()">
           @for (prod of products; track prod._id) {
-            <mat-option [value]="prod._id">{{ prod.name }} ({{ prod.categoryId?.name }})</mat-option>
+            <mat-option [value]="prod._id">{{ prod.name }} ({{ prod.categoryId.name }})</mat-option>
           }
         </mat-select>
       </mat-form-field>
@@ -38,9 +38,13 @@
           </button>
           <button mat-flat-button color="primary" [disabled]="saving" (click)="saveTemplate()">
             @if (saving) {
-              <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon> Saving...
+              <ng-container>
+                <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon> Saving...
+              </ng-container>
             } @else {
-              <mat-icon>save</mat-icon> Save Template
+              <ng-container>
+                <mat-icon>save</mat-icon> Save Template
+              </ng-container>
             }
           </button>
           

@@ -74,6 +74,8 @@ export class ReportBuilder implements OnInit {
 
   // Undo history
   undoStack: ReportTemplateCell[][] = [];
+  lastInternalTsv = '';
+
 
   // Resize state
   resizingCol: number | null = null;
@@ -356,8 +358,29 @@ export class ReportBuilder implements OnInit {
         cell: cell ? JSON.parse(JSON.stringify(cell)) : { row: s.row, col: s.col, type: 'text' as const, content: '' }
       });
     }
+    
+    // Also copy as plain text to system clipboard for external pasting
+    const textRows: string[][] = [];
+    const rows = Array.from(new Set(this.selectedCells.map(s => s.row))).sort((a,b) => a-b);
+    const cols = Array.from(new Set(this.selectedCells.map(s => s.col))).sort((a,b) => a-b);
+    
+    rows.forEach(r => {
+      const rowData: string[] = [];
+      cols.forEach(c => {
+        const cell = this.getCell(r, c);
+        rowData.push(cell ? cell.content : '');
+      });
+      textRows.push(rowData);
+    });
+    
+    const tsv = textRows.map(r => r.join('\t')).join('\n');
+    this.lastInternalTsv = tsv;
+    navigator.clipboard.writeText(tsv).catch(err => console.error('Could not copy text: ', err));
+
     this.snackBar.open('Copied ' + this.copiedCells.length + ' cell(s)', 'Close', { duration: 2000 });
   }
+
+
 
   pasteSelectedCells(): void {
     if (!this.copiedCells.length || !this.selectedCell) return;
@@ -382,10 +405,71 @@ export class ReportBuilder implements OnInit {
   handleKeyboardShortcuts(event: KeyboardEvent): void {
     const ctrl = event.ctrlKey || event.metaKey;
     if (!ctrl) return;
+
+    // Don't intercept if user is typing in an input
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
     if (event.key === 'c' || event.key === 'C') { this.copySelectedCells(); }
-    else if (event.key === 'v' || event.key === 'V') { event.preventDefault(); this.pasteSelectedCells(); }
     else if (event.key === 'z' || event.key === 'Z') { event.preventDefault(); this.undo(); }
+    // Ctrl+V is handled by handleExternalPaste (paste event)
   }
+
+  @HostListener('document:paste', ['$event'])
+  handleExternalPaste(event: ClipboardEvent): void {
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+    const clipboardData = event.clipboardData?.getData('text');
+    if (!clipboardData || !this.selectedCell) return;
+
+    event.preventDefault();
+
+    // Heuristic: If clipboard text matches our last internal copy, use internal paste to keep styling
+    if (this.copiedCells.length > 0 && clipboardData === this.lastInternalTsv) {
+      this.pasteSelectedCells();
+      return;
+    }
+
+    // Otherwise, parse as Excel/TSV
+    this.saveState();
+    const rows = clipboardData.split(/\r?\n/);
+    if (rows.length > 1 && rows[rows.length - 1].trim() === '') rows.pop();
+
+    const startRow = this.selectedCell.row;
+    const startCol = this.selectedCell.col;
+
+    rows.forEach((rowText, rIndex) => {
+      const cols = rowText.split('\t');
+      cols.forEach((cellText, cIndex) => {
+        const targetRow = startRow + rIndex;
+        const targetCol = startCol + cIndex;
+        if (targetRow >= this.template.rowCount || targetCol >= this.template.colCount) return;
+
+        const existingIdx = this.template.cells.findIndex(c => c.row === targetRow && c.col === targetCol);
+        if (existingIdx >= 0) {
+          this.template.cells[existingIdx].content = cellText.trim();
+          this.template.cells[existingIdx].type = 'text';
+        } else if (cellText.trim() !== '') {
+          this.template.cells.push({
+            row: targetRow,
+            col: targetCol,
+            type: 'text',
+            content: cellText.trim(),
+            bold: false,
+            align: 'left',
+            colSpan: 1,
+            rowSpan: 1,
+            thickBorder: false
+          });
+        }
+      });
+    });
+
+    this.snackBar.open(`Pasted from clipboard`, 'Close', { duration: 2000 });
+  }
+
+
 
   isSelected(r: number, c: number): boolean {
     return this.selectedCells.findIndex(sc => sc.row === r && sc.col === c) >= 0;

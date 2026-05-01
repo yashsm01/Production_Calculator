@@ -1,4 +1,4 @@
-<div class="page-content">
+<div class="page-content" style="padding-bottom: 100px;">
   <div class="page-header" style="margin-bottom:24px;">
     <h1 style="margin:0; font-weight:500;">Report Template Builder</h1>
     <div class="subtitle" style="color:var(--text-muted);">Design custom Excel-like layouts for product reports</div>
@@ -210,7 +210,7 @@
           }
 
           <!-- Grid -->
-          <div style="overflow: auto;">
+          <div style="overflow: auto; max-height: calc(100vh - 350px); border-top: 1px solid var(--border);">
             <!-- Zoom wrapper: scale from top-left origin so scroll works naturally -->
             <div [style.transform]="'scale(' + zoomLevel + ')'"
                  [style.transform-origin]="'top left'"

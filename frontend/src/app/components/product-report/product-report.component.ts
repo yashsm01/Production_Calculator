@@ -48,6 +48,8 @@ export class ProductReportComponent implements OnInit {
   savingHistory = false;
   showHeader = true;
   collapsedGroups = new Set<string>();
+  private parametersMetadata: Parameter[] = [];
+
 
   toggleGroup(header: string): void {
     if (this.collapsedGroups.has(header)) {
@@ -96,7 +98,9 @@ export class ProductReportComponent implements OnInit {
         this.api.getInputVariables(catId).subscribe({
           next: (res) => {
             // First build standard report data (so we have parameter maps ready if needed)
+            this.parametersMetadata = res.parameters;
             this.buildReport(product, res.parameters);
+
             
             // Now check for custom templates
             this.api.getReportTemplatesByProduct(product._id as string).subscribe({
@@ -261,22 +265,33 @@ export class ProductReportComponent implements OnInit {
       return '—';
     }
 
-    // Input values are handled by the HTML template using ngModel if it's an input.
-    // This is just the fallback for calculated variables or text.
+    let val = '—';
     if (this.product?.calculated && this.product.calculated[key] !== undefined) {
-      return this.formatNumber(this.product.calculated[key]);
+      val = this.formatNumber(this.product.calculated[key]);
+    } else if (this.product?.inputs && this.product.inputs[key] !== undefined) {
+      val = this.formatNumber(this.product.inputs[key]);
     }
-    if (this.product?.inputs && this.product.inputs[key] !== undefined) {
-      return this.formatNumber(this.product.inputs[key]);
+
+    if (val !== '—') {
+      const unit = this.getParameterUnit(key);
+      if (unit) {
+        return `${val} ${unit}`;
+      }
     }
     
-    return '—';
+    return val;
   }
 
   isInputParameter(key: string): boolean {
     if (!this.product || !this.product.inputs) return false;
     return this.product.inputs.hasOwnProperty(key);
   }
+
+  getParameterUnit(key: string): string {
+    const p = this.parametersMetadata.find(x => x.key === key);
+    return (p?.unit as any)?.symbol || '';
+  }
+
 
   recalculate(): void {
     if (!this.product) return;
@@ -323,8 +338,8 @@ export class ProductReportComponent implements OnInit {
     this.api.saveReportHistory(payload).subscribe({
       next: () => {
         this.savingHistory = false;
-        this.snackBar.open('✅ Report saved to history!', 'Close', { duration: 2500 });
         window.print();
+        this.snackBar.open('✅ Report saved to history!', 'Close', { duration: 2500 });
       },
       error: () => {
         this.savingHistory = false;

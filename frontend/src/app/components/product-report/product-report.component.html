@@ -100,10 +100,13 @@
                                  [style.color]="cell.fontColor || ''"
                                  class="cell-content">
                               @if (cell.type === 'parameter' && isInputParameter(cell.content)) {
-                                <input type="number" 
-                                       class="grid-input"
-                                       [(ngModel)]="product!.inputs[cell.content]" 
-                                       (change)="recalculate()">
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                  <input type="number" 
+                                         class="grid-input"
+                                         [(ngModel)]="product!.inputs[cell.content]" 
+                                         (change)="recalculate()">
+                                  <span class="val-unit" style="flex-shrink: 0;">{{ getParameterUnit(cell.content) }}</span>
+                                </div>
                               } @else {
                                 {{ getCellValue(cell) }}
                               }

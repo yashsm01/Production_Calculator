@@ -280,7 +280,13 @@
   }
 
   /* Angular overrides to hide the global toolbar and tabs during print */
-  nav.app-nav, .mat-mdc-tab-header, .view-toggle {
+  nav.app-nav, 
+  .mat-mdc-tab-header, 
+  .view-toggle, 
+  .cdk-overlay-container, 
+  .cdk-overlay-pane, 
+  .mat-mdc-snack-bar-container,
+  mat-snack-bar-container {
     display: none !important;
   }
 

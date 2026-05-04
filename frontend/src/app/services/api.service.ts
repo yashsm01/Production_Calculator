@@ -14,7 +14,7 @@ import {
   ReportHistory,
 } from '../models/interfaces';
 
-const BASE = '/api';
+const BASE = 'http://13.234.110.205:5000/api';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {

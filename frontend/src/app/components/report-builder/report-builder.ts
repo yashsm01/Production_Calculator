@@ -350,11 +350,19 @@ export class ReportBuilder implements OnInit {
     const minRow = Math.min(...this.selectedCells.map(s => s.row));
     const minCol = Math.min(...this.selectedCells.map(s => s.col));
     this.copiedCells = [];
+    const processedCells = new Set<string>();
+
     for (const s of this.selectedCells) {
       const cell = this.getCell(s.row, s.col);
+      
+      // If we've already processed this specific cell (e.g. it's part of a span we already handled), skip
+      const cellKey = cell ? `${cell.row},${cell.col}` : `${s.row},${s.col}`;
+      if (processedCells.has(cellKey)) continue;
+      processedCells.add(cellKey);
+
       this.copiedCells.push({
-        rowOffset: s.row - minRow,
-        colOffset: s.col - minCol,
+        rowOffset: (cell ? cell.row : s.row) - minRow,
+        colOffset: (cell ? cell.col : s.col) - minCol,
         cell: cell ? JSON.parse(JSON.stringify(cell)) : { row: s.row, col: s.col, type: 'text' as const, content: '' }
       });
     }
@@ -385,20 +393,39 @@ export class ReportBuilder implements OnInit {
   pasteSelectedCells(): void {
     if (!this.copiedCells.length || !this.selectedCell) return;
     this.saveState();
+    
     const targetRow = this.selectedCell.row;
     const targetCol = this.selectedCell.col;
+
     for (const copied of this.copiedCells) {
       const newRow = targetRow + copied.rowOffset;
       const newCol = targetCol + copied.colOffset;
+      
+      // Bounds check
       if (newRow >= this.template.rowCount || newCol >= this.template.colCount) continue;
-      const idx = this.template.cells.findIndex(c => c.row === newRow && c.col === newCol);
-      if (idx >= 0) this.template.cells.splice(idx, 1);
+      
       const c = copied.cell;
-      if (c.content?.trim() !== '' || c.bold || c.thickBorder || (c.colSpan || 1) > 1 || (c.rowSpan || 1) > 1 || c.bgColor || c.fontColor) {
-        this.template.cells.push({ ...c, row: newRow, col: newCol });
+      const cs = c.colSpan || 1;
+      const rs = c.rowSpan || 1;
+
+      // 1. Clear ANY existing cells that would overlap with this new cell's span
+      for (let r = newRow; r < newRow + rs; r++) {
+        for (let col = newCol; col < newCol + cs; col++) {
+          const idx = this.template.cells.findIndex(cell => cell.row === r && cell.col === col);
+          if (idx >= 0) this.template.cells.splice(idx, 1);
+        }
+      }
+
+      // 2. Push the new cell if it has any meaningful content or design
+      if (c.content?.trim() !== '' || c.bold || c.thickBorder || cs > 1 || rs > 1 || c.bgColor || c.fontColor || c.type === 'parameter') {
+        this.template.cells.push({ 
+          ...JSON.parse(JSON.stringify(c)), // deep copy to be safe
+          row: newRow, 
+          col: newCol 
+        });
       }
     }
-    this.snackBar.open('Pasted ' + this.copiedCells.length + ' cell(s)', 'Close', { duration: 2000 });
+    this.snackBar.open('Pasted ' + this.copiedCells.length + ' cell(s) with design', 'Close', { duration: 2000 });
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -446,16 +473,20 @@ export class ReportBuilder implements OnInit {
         const targetCol = startCol + cIndex;
         if (targetRow >= this.template.rowCount || targetCol >= this.template.colCount) return;
 
+        const content = cellText.trim();
+        const isParam = this.parameters.some(p => p.key === content);
+        const type = isParam ? 'parameter' : 'text';
+
         const existingIdx = this.template.cells.findIndex(c => c.row === targetRow && c.col === targetCol);
         if (existingIdx >= 0) {
-          this.template.cells[existingIdx].content = cellText.trim();
-          this.template.cells[existingIdx].type = 'text';
-        } else if (cellText.trim() !== '') {
+          this.template.cells[existingIdx].content = content;
+          this.template.cells[existingIdx].type = type;
+        } else if (content !== '') {
           this.template.cells.push({
             row: targetRow,
             col: targetCol,
-            type: 'text',
-            content: cellText.trim(),
+            type: type,
+            content: content,
             bold: false,
             align: 'left',
             colSpan: 1,

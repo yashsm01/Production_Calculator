@@ -14,11 +14,11 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
   template: `
     <div class="report-wrapper">
       <div class="print-controls">
-        <button mat-flat-button color="primary" (click)="print()" style="padding:24px 32px; border-radius:12px; font-size:1.1rem;">
-          <mat-icon style="margin-right:8px;">print</mat-icon> Print / Download PDF
+        <button mat-flat-button color="primary" (click)="print()">
+          <mat-icon style="margin-right:8px;">print</mat-icon> Print Snapshot
         </button>
-        <button mat-stroked-button onclick="history.back()" style="padding:16px 32px; border-radius:12px; background:white; border-color:#cbd5e1;">
-          <mat-icon style="margin-right:8px;">arrow_back</mat-icon> Go Back
+        <button mat-stroked-button onclick="history.back()" style="background:white; border-color:#cbd5e1;">
+          <mat-icon style="margin-right:8px;">arrow_back</mat-icon> Back
         </button>
       </div>
 
@@ -45,30 +45,34 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
           <div style="margin-top:2rem;">
             <h3 style="margin:0 0 1rem 0; color:#0077b6; border-bottom:1px solid #e2e8f0; padding-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">Input Values</h3>
-            <table class="report-table">
-              <tbody>
-                @for (entry of getEntries(snapshot.inputs); track entry[0]) {
-                  <tr>
-                    <td class="col-name"><span class="param-name">{{ entry[0] }}</span></td>
-                    <td class="col-badge"><span class="type-badge badge-input">Input</span></td>
-                    <td class="col-value">{{ formatNumber(entry[1]) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="report-table">
+                <tbody>
+                  @for (entry of getEntries(snapshot.inputs); track entry[0]) {
+                    <tr>
+                      <td class="col-name"><span class="param-name">{{ entry[0] }}</span></td>
+                      <td class="col-badge"><span class="type-badge badge-input">Input</span></td>
+                      <td class="col-value">{{ formatNumber(entry[1]) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
 
             <h3 style="margin:2rem 0 1rem 0; color:#7e22ce; border-bottom:1px solid #e2e8f0; padding-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">Calculated Values</h3>
-            <table class="report-table">
-              <tbody>
-                @for (entry of getEntries(snapshot.calculated); track entry[0]) {
-                  <tr>
-                    <td class="col-name"><span class="param-name">{{ entry[0] }}</span></td>
-                    <td class="col-badge"><span class="type-badge badge-formula">Calculated</span></td>
-                    <td class="col-value">{{ formatNumber(entry[1]) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="report-table">
+                <tbody>
+                  @for (entry of getEntries(snapshot.calculated); track entry[0]) {
+                    <tr>
+                      <td class="col-name"><span class="param-name">{{ entry[0] }}</span></td>
+                      <td class="col-badge"><span class="type-badge badge-formula">Calculated</span></td>
+                      <td class="col-value">{{ formatNumber(entry[1]) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           </div>
         } @else {
           <p style="color:#ef4444;">Snapshot not found.</p>

@@ -1,8 +1,8 @@
 <div class="page-content">
-  <div class="page-header" style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:center;">
+  <div class="page-header">
     <div>
       <h1 style="margin:0; font-weight:500;">Parameters</h1>
-      <div class="subtitle" style="color:var(--text-muted);">Define inputs and calculated formulas</div>
+      <div class="subtitle">Define inputs and calculated formulas</div>
     </div>
     <button mat-flat-button color="primary" (click)="openCreate()">
       <mat-icon>add</mat-icon> New Parameter
@@ -29,17 +29,17 @@
         </mat-form-field>
       </div>
 
-        <div style="margin-top: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
-          <mat-radio-group [(ngModel)]="form.type" style="display:flex; gap: 24px;">
-            <mat-radio-button value="input" color="primary">User Input</mat-radio-button>
-            <mat-radio-button value="formula" color="primary">Calculated Formula</mat-radio-button>
-          </mat-radio-group>
-          <mat-form-field appearance="outline" style="width: 200px; margin-bottom: -1.25em;">
-            <mat-label>Index (Priority)</mat-label>
-            <input matInput type="number" [(ngModel)]="form.index" placeholder="e.g. 1">
-            <mat-hint>Lower numbers appear first.</mat-hint>
-          </mat-form-field>
-        </div>
+      <div class="form-row" style="margin-top: 16px; margin-bottom: 24px; justify-content: space-between;">
+        <mat-radio-group [(ngModel)]="form.type" style="display:flex; gap: 24px; flex-wrap: wrap;">
+          <mat-radio-button value="input" color="primary">User Input</mat-radio-button>
+          <mat-radio-button value="formula" color="primary">Calculated Formula</mat-radio-button>
+        </mat-radio-group>
+        <mat-form-field appearance="outline" style="width: 200px;">
+          <mat-label>Index (Priority)</mat-label>
+          <input matInput type="number" [(ngModel)]="form.index" placeholder="e.g. 1">
+          <mat-hint>Lower numbers appear first.</mat-hint>
+        </mat-form-field>
+      </div>
 
       <div class="form-row">
         <mat-form-field appearance="outline" class="form-field-half">
@@ -81,12 +81,12 @@
             <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
             }
           </mat-select>
-          <mat-hint>Leave empty to make this parameter global (applies to all categories)</mat-hint>
+          <mat-hint>Leave empty to make this parameter global</mat-hint>
         </mat-form-field>
       </div>
 
       @if (form.type === 'formula') {
-      <div class="form-row" style="margin-bottom: 24px;">
+      <div class="form-row" style="margin-top: 16px; margin-bottom: 24px;">
         <mat-form-field appearance="outline" class="form-field-full">
           <mat-label> Formula</mat-label>
           <input matInput #formulaInput [(ngModel)]="form.formula" (ngModelChange)="onFormulaChange($event)"
@@ -97,7 +97,6 @@
             {{ formulaValid === true ? 'check_circle' : (formulaValid === false ? 'error' : 'functions') }}
           </mat-icon>
 
-          <!-- Insert Variable Menu -->
           <button mat-icon-button matSuffix [matMenuTriggerFor]="varMenu" type="button" title="Insert Variable"
             style="color: #64748b; margin-left: 8px;">
             <mat-icon>add_circle_outline</mat-icon>
@@ -187,8 +186,8 @@
       <p>Loading records...</p>
     </div>
     } @else {
-    <div style="overflow-x: auto;">
-      <table mat-table [dataSource]="dataSource" matSort style="width: 100%; min-width:800px;">
+    <div class="table-responsive">
+      <table mat-table [dataSource]="dataSource" matSort style="width: 100%;">
 
         <ng-container matColumnDef="index">
           <th mat-header-cell *matHeaderCellDef mat-sort-header style="width: 80px;"> Index </th>
@@ -264,9 +263,9 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-
+        
         <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell" colspan="8" style="padding: 24px; text-align: center; color: var(--text-muted);">
+          <td class="mat-cell" colspan="9" style="padding: 24px; text-align: center; color: var(--text-muted);">
             No parameters match your search.
           </td>
         </tr>

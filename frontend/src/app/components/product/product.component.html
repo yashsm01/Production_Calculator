@@ -1,12 +1,12 @@
 <div class="page-content">
-  <div class="page-header" style="margin-bottom:24px;">
+  <div class="page-header">
     <h1 style="margin:0; font-weight:500;">Run Engine</h1>
-    <div class="subtitle" style="color:var(--text-muted);">Calculate a new product pricing or config</div>
+    <div class="subtitle">Calculate a new product pricing or config</div>
   </div>
 
   <div class="form-row" style="align-items: flex-start;">
     <!-- LEFT PANEL: Calculator Form -->
-    <div style="flex: 1 1 600px; min-width: 0;">
+    <div class="form-field-half" style="flex: 2 1 600px; min-width: 300px;">
       <mat-card appearance="outlined">
         <mat-card-header>
           <mat-card-title>Product Configurator</mat-card-title>
@@ -74,11 +74,11 @@
               </div>
             }
 
-            <div style="margin-top: 16px; display:flex; gap: 16px;">
-              <button mat-flat-button color="primary" (click)="submit()" [disabled]="submitting" style="flex:1;">
+            <div style="margin-top: 16px; display:flex; flex-wrap: wrap; gap: 16px;">
+              <button mat-flat-button color="primary" (click)="submit()" [disabled]="submitting" style="flex:2; min-width: 200px;">
                 {{ submitting ? 'Calculating Engine...' : 'Run Calculator' }}
               </button>
-              <button mat-button (click)="resetForm()">Reset</button>
+              <button mat-button (click)="resetForm()" style="flex:1; min-width: 100px;">Reset</button>
             </div>
           } @else if (selectedCategoryId) {
             <div style="padding: 24px; text-align: center; color: var(--text-muted);">
@@ -95,7 +95,7 @@
 
     <!-- RIGHT PANEL: Result -->
     @if (lastResult) {
-      <div style="flex: 1 1 400px; min-width: 0;">
+      <div class="form-field-half" style="flex: 1 1 350px; min-width: 300px;">
         <mat-card appearance="outlined" style="background:#f0fdff; border-color:#00B4D8;">
           <mat-card-header>
             <mat-card-title>Engine Result</mat-card-title>
@@ -114,25 +114,27 @@
                   </mat-checkbox>
                   {{ group.header }}
                 </h4>
-                <table style="width:100%; border-collapse: collapse;">
-                  @for (param of group.parameters; track param.key) {
-                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.03);">
-                      <td style="padding: 6px 0;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                          <mat-checkbox [checked]="!isReportHidden(param.key)" (change)="toggleReportHidden(param.key)" 
-                            color="primary" matTooltip="Show in Report" style="transform: scale(0.85);"></mat-checkbox>
-                          <div>
-                            <div style="font-weight:500; font-size:0.9rem;">{{ param.name }}</div>
-                            <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">{{ param.key }}</div>
+                <div class="table-responsive">
+                  <table style="width:100%; border-collapse: collapse;">
+                    @for (param of group.parameters; track param.key) {
+                      <tr style="border-bottom: 1px solid rgba(0,0,0,0.03);">
+                        <td style="padding: 6px 0;">
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <mat-checkbox [checked]="!isReportHidden(param.key)" (change)="toggleReportHidden(param.key)" 
+                              color="primary" matTooltip="Show in Report" style="transform: scale(0.85);"></mat-checkbox>
+                            <div>
+                              <div style="font-weight:500; font-size:0.9rem;">{{ param.name }}</div>
+                              <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">{{ param.key }}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td style="padding: 6px 0; text-align:right; font-family:monospace; font-size:1.05rem; color:var(--primary); font-weight: 500;">
-                        {{ formatNumber(param.value) }} <span style="font-size:0.85rem; color:var(--text-muted); font-weight:400; margin-left:4px;">{{ param.unit }}</span>
-                      </td>
-                    </tr>
-                  }
-                </table>
+                        </td>
+                        <td style="padding: 6px 0; text-align:right; font-family:monospace; font-size:1.05rem; color:var(--primary); font-weight: 500;">
+                          {{ formatNumber(param.value) }} <span style="font-size:0.85rem; color:var(--text-muted); font-weight:400; margin-left:4px;">{{ param.unit }}</span>
+                        </td>
+                      </tr>
+                    }
+                  </table>
+                </div>
               </div>
             }
           </mat-card-content>
@@ -146,12 +148,12 @@
   <!-- SAVED PRODUCTS TABLE -->
   <div style="margin-bottom: 24px;">
     <h2 style="margin:0; font-weight:500;">Saved Products</h2>
-    <p style="color:var(--text-muted); margin:0;">View and manage previously calculated products</p>
+    <p class="subtitle">View and manage previously calculated products</p>
   </div>
 
   <mat-card appearance="outlined" style="padding:0;">
     <div style="padding: 16px 24px; border-bottom: 1px solid var(--border);">
-      <mat-form-field appearance="outline" style="width:100%; max-width:400px; margin-bottom:-1.25em;">
+      <mat-form-field appearance="outline" class="form-field-full" style="max-width:400px; margin-bottom:-1.25em;">
         <mat-label>Search Products</mat-label>
         <mat-icon matPrefix>search</mat-icon>
         <input matInput (keyup)="applyFilter($event)" placeholder="Search by name...">
@@ -164,7 +166,7 @@
         <p>Loading products...</p>
       </div>
     } @else {
-      <div style="overflow-x: auto;">
+      <div class="table-responsive">
         <table mat-table [dataSource]="dataSource" matSort style="width: 100%;">
           
           <ng-container matColumnDef="name">
@@ -186,16 +188,13 @@
             <th mat-header-cell *matHeaderCellDef style="text-align: right;"> Actions </th>
             <td mat-cell *matCellDef="let element" style="text-align: right; white-space: nowrap;">
               <a mat-flat-button color="primary" [routerLink]="['/report', element._id]" [queryParams]="{view: 'custom'}" style="margin-right: 8px;">
-                <mat-icon style="margin-right: 4px;">grid_on</mat-icon> Excel
+                <mat-icon>grid_on</mat-icon> Excel
               </a>
               <a mat-stroked-button color="primary" [routerLink]="['/report', element._id]" [queryParams]="{view: 'standard'}" style="margin-right: 8px; border-color: #0ea5e9; color: #0ea5e9;">
-                <mat-icon style="margin-right: 4px;">list_alt</mat-icon> Details
+                <mat-icon>list_alt</mat-icon> Details
               </a>
               <button mat-stroked-button (click)="openHistoryPanel(element)" style="margin-right: 8px; border-color: #8b5cf6; color: #8b5cf6;" matTooltip="View saved report history">
-                <mat-icon style="margin-right: 4px;">history</mat-icon> History
-              </button>
-              <button mat-stroked-button color="accent" (click)="editProduct(element)" style="margin-right: 8px;">
-                Edit
+                <mat-icon>history</mat-icon> History
               </button>
               <button mat-icon-button color="warn" (click)="deleteProduct(element._id, element.name)" title="Delete">
                 <mat-icon>delete</mat-icon>

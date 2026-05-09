@@ -55,4 +55,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/report-history-view/report-history-view.component').then((m) => m.ReportHistoryViewComponent),
   },
+  {
+    path: 'master-product',
+    canActivate: [AuthGuard],
+    loadComponent: () =>
+      import('./components/master-product/master-product.component').then((m) => m.MasterProductComponent),
+  },
 ];

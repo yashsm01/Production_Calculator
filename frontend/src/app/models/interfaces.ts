@@ -102,3 +102,45 @@ export interface InputVariablesResult {
   inputVariables: string[];
   parameters: Parameter[];
 }
+
+// ── Master Product ─────────────────────────────────────────────────────────────
+
+export interface MasterProductRef {
+  productId: string | Product;
+  alias: string;
+}
+
+export interface MasterParam {
+  key: string;
+  name: string;
+  formula: string;
+  unit?: string;
+  index?: number;
+}
+
+export interface MasterProduct {
+  _id?: string;
+  name: string;
+  description?: string;
+  productRefs: MasterProductRef[];
+  masterParams: MasterParam[];
+  computed?: Record<string, number>;
+  scope?: Record<string, number>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MasterRefDetail {
+  productId: string;
+  alias: string;
+  productName: string;
+  categoryName: string;
+  values: Record<string, number>;
+}
+
+export interface MasterProductResult {
+  master: MasterProduct;
+  refDetails: MasterRefDetail[];
+  scope: Record<string, number>;
+}
+

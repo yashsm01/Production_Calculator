@@ -13,7 +13,10 @@ import {
   HeaderInfo,
   ReportTemplate,
   ReportHistory,
+  MasterProduct,
+  MasterProductResult,
 } from '../models/interfaces';
+
 
 export const BASE = environment.apiUrl;
 
@@ -145,4 +148,25 @@ export class ApiService {
   deleteReportHistory(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${BASE}/report-history/${id}`);
   }
+
+  // ── Master Product ───────────────────────────────────────────────────────────
+  getMasterProducts(): Observable<MasterProduct[]> {
+    return this.http.get<MasterProduct[]>(`${BASE}/master-product`);
+  }
+  getMasterProductById(id: string): Observable<MasterProductResult> {
+    return this.http.get<MasterProductResult>(`${BASE}/master-product/${id}`);
+  }
+  createMasterProduct(data: Partial<MasterProduct>): Observable<MasterProductResult> {
+    return this.http.post<MasterProductResult>(`${BASE}/master-product`, data);
+  }
+  updateMasterProduct(id: string, data: Partial<MasterProduct>): Observable<MasterProductResult> {
+    return this.http.put<MasterProductResult>(`${BASE}/master-product/${id}`, data);
+  }
+  deleteMasterProduct(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${BASE}/master-product/${id}`);
+  }
+  previewMasterProduct(data: { productRefs: any[]; masterParams: any[] }): Observable<MasterProductResult> {
+    return this.http.post<MasterProductResult>(`${BASE}/master-product/preview`, data);
+  }
 }
+

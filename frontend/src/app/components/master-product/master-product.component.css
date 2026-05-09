@@ -1,0 +1,320 @@
+/* ── Form Card ──────────────────────────────────────────────────────────────── */
+.form-card {
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+/* ── Section Titles ─────────────────────────────────────────────────────────── */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1e293b;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.section-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ── Product Reference Row ──────────────────────────────────────────────────── */
+.ref-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.alias-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-top: 12px;
+}
+
+.ref-product-field {
+  flex: 2 1 300px;
+  min-width: 200px;
+}
+
+.ref-alias-field {
+  flex: 1 1 200px;
+  min-width: 150px;
+}
+
+/* ── Scope Preview ───────────────────────────────────────────────────────────── */
+.scope-preview {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.scope-group {
+  margin-bottom: 16px;
+}
+
+.scope-group:last-child {
+  margin-bottom: 0;
+}
+
+.scope-group-header {
+  border-left: 4px solid #0ea5e9;
+  padding-left: 12px;
+  margin-bottom: 10px;
+}
+
+.scope-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scope-keys-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 16px;
+}
+
+.scope-key-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+}
+
+.scope-key-chip code {
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.scope-val {
+  color: #0284c7;
+  font-family: monospace;
+}
+
+/* ── Alias Chip ─────────────────────────────────────────────────────────────── */
+.alias-chip {
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* ── Master Param Row ────────────────────────────────────────────────────────── */
+.empty-params {
+  text-align: center;
+  padding: 32px;
+  background: #fafafa;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.empty-params mat-icon {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+  color: #cbd5e1;
+}
+
+.master-param-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  background: #fafafa;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.param-index-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 12px;
+}
+
+.master-param-fields {
+  flex: 1;
+  min-width: 0;
+}
+
+.quick-insert {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.key-chip {
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #0ea5e9;
+  background: white;
+  color: #0369a1;
+  font-size: 0.75rem;
+  font-family: monospace;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.key-chip:hover {
+  background: #e0f2fe;
+}
+
+/* ── Hint Text ───────────────────────────────────────────────────────────────── */
+.hint-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Table Styles ────────────────────────────────────────────────────────────── */
+.tbl-th {
+  padding: 10px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+}
+
+.tbl-td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.tbl-row:hover {
+  background: #f8fafc;
+}
+
+.tbl-row:last-child .tbl-td {
+  border-bottom: none;
+}
+
+/* ── Ref Tags ────────────────────────────────────────────────────────────────── */
+.ref-tag {
+  color: white;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ── Report Card ─────────────────────────────────────────────────────────────── */
+.report-card {
+  margin-top: 24px;
+  border: 2px solid #8b5cf6 !important;
+  border-radius: 12px !important;
+}
+
+.report-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #1e293b;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Report Ref Block ────────────────────────────────────────────────────────── */
+.report-ref-block {
+  border-left: 4px solid #0ea5e9;
+  padding-left: 16px;
+  margin-bottom: 24px;
+  background: #f8fafc;
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+}
+
+.report-ref-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+/* ── Report Table ────────────────────────────────────────────────────────────── */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rpt-th {
+  padding: 8px 12px;
+  background: #f1f5f9;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+}
+
+.rpt-td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.92rem;
+}
+
+.report-table tr:hover .rpt-td {
+  background: #f8fafc;
+}
+
+@media (max-width: 600px) {
+  .ref-row {
+    flex-direction: column;
+  }
+  .master-param-row {
+    flex-direction: column;
+  }
+  .alias-badge, .param-index-badge {
+    margin-top: 0;
+  }
+}

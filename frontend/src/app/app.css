@@ -1,10 +1,16 @@
 /* app.css */
+.app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .app-toolbar {
   display: flex;
   align-items: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 1000;
-  position: relative;
+  flex-shrink: 0;
 }
 
 .toolbar-brand {
@@ -17,10 +23,59 @@
   color: inherit;
 }
 
-.app-toolbar a[mat-button] {
-  margin-left: 8px;
+.desktop-nav {
+  display: flex;
+  align-items: center;
+}
+
+.menu-button {
+  display: none;
+  margin-right: 8px;
+}
+
+.app-sidenav {
+  width: 280px;
+}
+
+.sidenav-header {
+  padding: 24px;
+  background-color: var(--mat-sys-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  font-size: 1.2rem;
 }
 
 .active-link {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: var(--mat-sys-primary) !important;
+}
+
+.desktop-nav .active-link {
   background-color: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+}
+
+.builder-btn {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 4px !important;
+  margin-right: 8px;
+}
+
+.builder-link {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+@media (max-width: 1100px) {
+  .desktop-nav {
+    display: none;
+  }
+  .menu-button {
+    display: block;
+  }
+}
+
+.spacer {
+  flex: 1 1 auto;
 }

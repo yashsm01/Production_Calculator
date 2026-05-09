@@ -13,6 +13,7 @@ const headerInfoRoutes = require('./routes/headerInfo');
 const reportTemplateRoutes = require('./routes/reportTemplate');
 const reportHistoryRoutes = require('./routes/reportHistory');
 const authRoutes = require('./routes/auth');
+const masterProductRoutes = require('./routes/masterProduct');
 const errorHandler = require('./middleware/errorHandler');
 const { protect } = require('./middleware/auth');
 
@@ -33,6 +34,7 @@ app.use('/api/product', protect, productRoutes);
 app.use('/api/header-info', protect, headerInfoRoutes);
 app.use('/api/report-template', protect, reportTemplateRoutes);
 app.use('/api/report-history', protect, reportHistoryRoutes);
+app.use('/api/master-product', protect, masterProductRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

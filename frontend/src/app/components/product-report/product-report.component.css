@@ -3,11 +3,11 @@
 .report-wrapper {
   background: #e2e8f0;
   min-height: 100vh;
-  padding: 2rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
   font-family: 'Roboto', sans-serif;
   color: #1e293b;
 }
@@ -16,26 +16,60 @@
   background: white;
   width: 100%;
   max-width: 1800px;
-  min-height: 210mm;
-  padding: 40px;
+  min-height: auto;
+  padding: 24px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
   position: relative;
   box-sizing: border-box;
+  border-radius: 8px;
+}
+
+@media (max-width: 600px) {
+  .report-wrapper {
+    padding: 0.5rem;
+  }
+  .report-container {
+    padding: 16px;
+    border-radius: 0;
+  }
+  .doc-title {
+    font-size: 1.5rem;
+  }
 }
 
 .print-controls {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #e2e8f0;
-  padding: 16px 0;
+  background: rgba(226, 232, 240, 0.9);
+  backdrop-filter: blur(8px);
+  padding: 12px 16px;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   width: 100%;
-  gap: 1rem;
+  gap: 12px;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 600px) {
+  .print-controls {
+    padding: 8px;
+    gap: 8px;
+    position: static;
+  }
+  .print-controls button, 
+  .print-controls a,
+  .print-controls .view-toggle {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 140px;
+    padding: 12px 8px !important;
+    font-size: 0.9rem !important;
+    height: auto !important;
+  }
 }
 
 /* Document Typography & Elements */

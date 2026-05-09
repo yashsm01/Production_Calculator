@@ -1,36 +1,93 @@
 @if (authService.currentUserValue) {
-<mat-toolbar color="primary" class="app-toolbar">
-  <div class="toolbar-brand" routerLink="/">
-    <mat-icon style="margin-right: 8px;">calculate</mat-icon>
-    <span>CalcEngine</span>
-  </div>
+<mat-sidenav-container class="app-container">
+  <mat-sidenav #sidenav mode="over" class="app-sidenav">
+    <div class="sidenav-header">
+      <mat-icon style="margin-right: 8px;">calculate</mat-icon>
+      <span>CalcEngine</span>
+    </div>
+    <mat-nav-list (click)="sidenav.close()">
+      <a mat-list-item routerLink="/category" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>category</mat-icon>
+        <div matListItemTitle>Categories</div>
+      </a>
+      <a mat-list-item routerLink="/unit" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>straighten</mat-icon>
+        <div matListItemTitle>Units</div>
+      </a>
+      <a mat-list-item routerLink="/header-info" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>view_day</mat-icon>
+        <div matListItemTitle>Header Info</div>
+      </a>
+      <a mat-list-item routerLink="/parameter" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>functions</mat-icon>
+        <div matListItemTitle>Parameters</div>
+      </a>
+      <a mat-list-item routerLink="/product" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>inventory_2</mat-icon>
+        <div matListItemTitle>Products</div>
+      </a>
+      <a mat-list-item routerLink="/report-builder" routerLinkActive="active-link" class="builder-link">
+        <mat-icon matListItemIcon>grid_on</mat-icon>
+        <div matListItemTitle>Template Builder</div>
+      </a>
+      <a mat-list-item routerLink="/master-product" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>hub</mat-icon>
+        <div matListItemTitle>Master Product</div>
+      </a>
+      <mat-divider></mat-divider>
+      <button mat-list-item (click)="logout()">
+        <mat-icon matListItemIcon>logout</mat-icon>
+        <div matListItemTitle>Logout</div>
+      </button>
+    </mat-nav-list>
+  </mat-sidenav>
 
-  <span class="spacer"></span>
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="app-toolbar">
+      <button mat-icon-button class="menu-button" (click)="sidenav.toggle()">
+        <mat-icon>menu</mat-icon>
+      </button>
 
-  <a mat-button routerLink="/category" routerLinkActive="active-link">
-    <mat-icon>category</mat-icon> Categories
-  </a>
-  <a mat-button routerLink="/unit" routerLinkActive="active-link">
-    <mat-icon>straighten</mat-icon> Units
-  </a>
-  <a mat-button routerLink="/header-info" routerLinkActive="active-link">
-    <mat-icon>view_day</mat-icon> Header Info
-  </a>
-  <a mat-button routerLink="/parameter" routerLinkActive="active-link">
-    <mat-icon>functions</mat-icon> Parameters
-  </a>
-  <a mat-button routerLink="/product" routerLinkActive="active-link">
-    <mat-icon>inventory_2</mat-icon> Products
-  </a>
-  <a mat-button routerLink="/report-builder" routerLinkActive="active-link" style="background-color: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 16px;">
-    <mat-icon>grid_on</mat-icon> Template Builder
-  </a>
-  <button mat-button (click)="logout()">
-    <mat-icon>logout</mat-icon> Logout
-  </button>
-</mat-toolbar>
-}
+      <div class="toolbar-brand" routerLink="/">
+        <mat-icon style="margin-right: 8px;">calculate</mat-icon>
+        <span>CalcEngine</span>
+      </div>
 
-<main class="page-container">
+      <span class="spacer"></span>
+
+      <div class="desktop-nav">
+        <a mat-button routerLink="/category" routerLinkActive="active-link">
+          <mat-icon>category</mat-icon> Categories
+        </a>
+        <a mat-button routerLink="/unit" routerLinkActive="active-link">
+          <mat-icon>straighten</mat-icon> Units
+        </a>
+        <a mat-button routerLink="/header-info" routerLinkActive="active-link">
+          <mat-icon>view_day</mat-icon> Header Info
+        </a>
+        <a mat-button routerLink="/parameter" routerLinkActive="active-link">
+          <mat-icon>functions</mat-icon> Parameters
+        </a>
+        <a mat-button routerLink="/product" routerLinkActive="active-link">
+          <mat-icon>inventory_2</mat-icon> Products
+        </a>
+        <a mat-button routerLink="/report-builder" routerLinkActive="active-link" class="builder-btn">
+          <mat-icon>grid_on</mat-icon> Template Builder
+        </a>
+        <a mat-button routerLink="/master-product" routerLinkActive="active-link">
+          <mat-icon>hub</mat-icon> Master
+        </a>
+        <button mat-icon-button (click)="logout()" matTooltip="Logout">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </div>
+    </mat-toolbar>
+
+    <main class="page-container">
+      <router-outlet></router-outlet>
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+} @else {
   <router-outlet></router-outlet>
-</main>
+}

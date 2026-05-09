@@ -1,0 +1,378 @@
+<div class="page-content">
+  <div class="page-header">
+    <div>
+      <h1 style="margin:0; font-weight:500;">Master Product</h1>
+      <div class="subtitle">Combine multiple products and create cross-product formulas</div>
+    </div>
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>add</mat-icon> New Master
+    </button>
+  </div>
+
+  <!-- ── FORM ────────────────────────────────────────────────────────────── -->
+  @if (formVisible) {
+  <mat-card appearance="outlined" class="form-card" style="margin-bottom: 24px;">
+    <mat-card-header>
+      <mat-card-title>{{ editMode ? 'Edit Master Product' : 'Create Master Product' }}</mat-card-title>
+      <mat-card-subtitle>Reference existing products and build cross-product formulas</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content style="padding-top: 16px;">
+
+      <!-- Basic Info -->
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field-half">
+          <mat-label>Master Product Name</mat-label>
+          <input matInput [(ngModel)]="form.name" placeholder="e.g. Combined Assembly Report">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="form-field-half">
+          <mat-label>Description (optional)</mat-label>
+          <input matInput [(ngModel)]="form.description" placeholder="What does this master product combine?">
+        </mat-form-field>
+      </div>
+
+      <mat-divider style="margin: 16px 0;"></mat-divider>
+
+      <!-- Product References -->
+      <div class="section-title">
+        <mat-icon style="color: #0ea5e9;">link</mat-icon>
+        <span>Product References</span>
+        <span class="section-hint">Each product gets a short alias used as a key prefix</span>
+      </div>
+
+      @for (ref of productRefs; track $index) {
+      <div class="ref-row">
+        <div class="alias-badge" [style.background]="getAliasColor($index)">{{ ref.alias || '?' }}</div>
+
+        <mat-form-field appearance="outline" class="ref-product-field">
+          <mat-label>Product</mat-label>
+          <mat-select [(ngModel)]="ref.productId" (ngModelChange)="previewDone = false">
+            @for (p of allProducts; track p._id) {
+            <mat-option [value]="p._id">{{ p.name }} — {{ p.categoryId?.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="ref-alias-field">
+          <mat-label>Alias (prefix)</mat-label>
+          <input matInput [(ngModel)]="ref.alias" placeholder="e.g. X or ProductA" (ngModelChange)="previewDone = false">
+          <mat-hint>Keys will be: <code>{{ (ref.alias || 'alias').toLowerCase() }}_paramkey</code></mat-hint>
+        </mat-form-field>
+
+        <button mat-icon-button color="warn" (click)="removeProductRef($index)" matTooltip="Remove">
+          <mat-icon>remove_circle_outline</mat-icon>
+        </button>
+      </div>
+      }
+
+      <button mat-stroked-button color="primary" (click)="addProductRef()" style="margin-top: 8px;">
+        <mat-icon>add</mat-icon> Add Product Reference
+      </button>
+
+      <!-- Preview Button -->
+      <div style="margin-top: 16px; display: flex; align-items: center; gap: 12px;">
+        <button mat-stroked-button color="accent" (click)="preview()" [disabled]="previewLoading">
+          @if (previewLoading) {
+          <mat-icon style="animation: spin 1s linear infinite;">sync</mat-icon>
+          } @else {
+          <mat-icon>preview</mat-icon>
+          }
+          Preview Available Keys
+        </button>
+        <span class="hint-text" *ngIf="!previewDone">Preview to see all parameter keys you can use in formulas</span>
+      </div>
+
+      <!-- Preview Result: Available Scope Keys -->
+      @if (previewDone) {
+      <div class="scope-preview">
+        @for (detail of refDetails; track detail.alias) {
+        <div class="scope-group">
+          <div class="scope-group-header" [style.border-left-color]="getAliasColor($index)">
+            <div class="scope-group-title">
+              <span class="alias-chip" [style.background]="getAliasColor($index)">{{ detail.alias }}</span>
+              <strong>{{ detail.productName }}</strong>
+              <span style="color: var(--text-muted); font-size: 0.85rem;">{{ detail.categoryName }}</span>
+            </div>
+          </div>
+          <div class="scope-keys-grid">
+            @for (key of getScopeKeysForRef(detail.alias); track key) {
+            <div class="scope-key-chip">
+              <code>{{ key }}</code>
+              <span class="scope-val">= {{ formatNum(scope[key]) }}</span>
+            </div>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      }
+
+      <mat-divider style="margin: 20px 0;"></mat-divider>
+
+      <!-- Master Parameters (Formulas) -->
+      <div class="section-title">
+        <mat-icon style="color: #8b5cf6;">functions</mat-icon>
+        <span>Master Parameters</span>
+        <span class="section-hint">Define new parameters using values from referenced products</span>
+      </div>
+
+      @if (masterParams.length === 0) {
+      <div class="empty-params">
+        <mat-icon>calculate</mat-icon>
+        <p>No master parameters yet. Add one to combine values from your referenced products.</p>
+        <p style="font-size:0.8rem; color: var(--text-muted);">Example: <code>x_weight + y_weight</code> where X and Y are your product aliases</p>
+      </div>
+      }
+
+      @for (param of masterParams; track $index) {
+      <div class="master-param-row">
+        <div class="param-index-badge">{{ $index + 1 }}</div>
+
+        <div class="master-param-fields">
+          <div class="form-row" style="margin-bottom: 8px;">
+            <mat-form-field appearance="outline" class="form-field-half">
+              <mat-label>Parameter Name</mat-label>
+              <input matInput [(ngModel)]="param.name" placeholder="e.g. Total Combined Weight">
+            </mat-form-field>
+            <mat-form-field appearance="outline" style="width: 160px;">
+              <mat-label>Key</mat-label>
+              <input matInput [(ngModel)]="param.key" placeholder="e.g. total_weight">
+              <mat-hint>Used in other formulas</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" style="width: 120px;">
+              <mat-label>Unit</mat-label>
+              <input matInput [(ngModel)]="param.unit" placeholder="kg, m², etc.">
+            </mat-form-field>
+            <mat-form-field appearance="outline" style="width: 80px;">
+              <mat-label>Index</mat-label>
+              <input matInput type="number" [(ngModel)]="param.index">
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Formula</mat-label>
+            <input matInput [(ngModel)]="param.formula" placeholder="e.g. x_weight + y_weight or x_area * 2.5">
+            <mat-hint>Use alias-prefixed keys from the preview above. E.g. <code>x_abc + y_abc</code></mat-hint>
+          </mat-form-field>
+
+          <!-- Quick insert chips -->
+          @if (previewDone && getScopeKeysForRef('').length === 0) {
+            <!-- just a spacer -->
+          }
+          @if (previewDone) {
+          <div class="quick-insert">
+            <span class="hint-text">Quick insert: </span>
+            @for (detail of refDetails; track detail.alias) {
+              @for (key of getScopeKeysForRef(detail.alias); track key) {
+              <button class="key-chip" (click)="insertAliasKey($index, key)" type="button"
+                [style.border-color]="getAliasColor($index)">
+                {{ key }}
+              </button>
+              }
+            }
+          </div>
+          }
+        </div>
+
+        <button mat-icon-button color="warn" (click)="removeMasterParam($index)" matTooltip="Remove">
+          <mat-icon>remove_circle_outline</mat-icon>
+        </button>
+      </div>
+      }
+
+      <button mat-stroked-button color="primary" (click)="addMasterParam()" style="margin-top: 8px;">
+        <mat-icon>add</mat-icon> Add Master Parameter
+      </button>
+
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button (click)="closeForm()">Cancel</button>
+      <button mat-flat-button color="primary" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Saving...' : (editMode ? 'Update Master' : 'Save Master') }}
+      </button>
+    </mat-card-actions>
+  </mat-card>
+  }
+
+  <!-- ── MASTER PRODUCTS LIST ─────────────────────────────────────────────── -->
+  <mat-card appearance="outlined" style="padding: 0;">
+    <div style="padding: 16px 24px; border-bottom: 1px solid var(--border);">
+      <h3 style="margin: 0; font-weight: 500;">Saved Master Products</h3>
+    </div>
+
+    @if (loading) {
+    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+      <mat-icon style="animation: spin 1s linear infinite;">sync</mat-icon>
+      <p>Loading...</p>
+    </div>
+    } @else if (masterProducts.length === 0) {
+    <div style="padding: 48px; text-align: center; color: var(--text-muted);">
+      <mat-icon style="font-size: 48px; width:48px; height:48px; color: #cbd5e1;">hub</mat-icon>
+      <p style="font-size: 1.1rem; margin-top: 16px;">No master products yet.</p>
+      <p>Create one to combine values from multiple products.</p>
+    </div>
+    } @else {
+    <div class="table-responsive">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f8fafc; border-bottom: 2px solid var(--border);">
+            <th class="tbl-th">Name</th>
+            <th class="tbl-th">Products Referenced</th>
+            <th class="tbl-th">Master Params</th>
+            <th class="tbl-th">Created</th>
+            <th class="tbl-th" style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (master of masterProducts; track master._id) {
+          <tr class="tbl-row">
+            <td class="tbl-td">
+              <div style="font-weight: 500;">{{ master.name }}</div>
+              @if (master.description) {
+              <div style="font-size: 0.8rem; color: var(--text-muted);">{{ master.description }}</div>
+              }
+            </td>
+            <td class="tbl-td">
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                @for (ref of master.productRefs; track ref.alias) {
+                <span class="ref-tag" [style.background]="getAliasColor($index)">
+                  {{ ref.alias }}
+                </span>
+                }
+              </div>
+            </td>
+            <td class="tbl-td">
+              <span style="font-size: 0.9rem; color: var(--text-muted);">
+                {{ master.masterParams.length }} formula(s)
+              </span>
+            </td>
+            <td class="tbl-td" style="color: var(--text-muted); font-size: 0.85rem;">
+              {{ master.createdAt | date:'shortDate' }}
+            </td>
+            <td class="tbl-td" style="text-align: right; white-space: nowrap;">
+              <button mat-flat-button color="primary" (click)="viewMaster(master)" style="margin-right: 8px;">
+                <mat-icon>visibility</mat-icon> View Report
+              </button>
+              <button mat-icon-button color="primary" (click)="openEdit(master)" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="delete(master._id!, master.name)" matTooltip="Delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </mat-card>
+
+  <!-- ── MASTER REPORT VIEW ──────────────────────────────────────────────── -->
+  @if (viewLoading) {
+  <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+    <mat-icon style="animation: spin 1s linear infinite; font-size: 36px; width: 36px; height: 36px;">sync</mat-icon>
+    <p>Loading master report...</p>
+  </div>
+  }
+
+  @if (viewingMaster) {
+  <div id="master-report">
+    <mat-card appearance="outlined" class="report-card">
+      <mat-card-header style="padding-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+          <div>
+            <mat-card-title style="font-size: 1.4rem;">{{ viewingMaster.name }}</mat-card-title>
+            @if (viewingMaster.description) {
+            <mat-card-subtitle>{{ viewingMaster.description }}</mat-card-subtitle>
+            }
+          </div>
+          <button mat-icon-button (click)="closeView()" matTooltip="Close">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </mat-card-header>
+      <mat-card-content style="padding-top: 16px;">
+
+        <!-- Referenced Products values section -->
+        <div class="report-section-title">
+          <mat-icon style="color: #0ea5e9;">link</mat-icon>
+          Referenced Product Values
+        </div>
+
+        @for (detail of viewRefDetails; track detail.alias) {
+        <div class="report-ref-block" [style.border-left-color]="getAliasColor($index)">
+          <div class="report-ref-header">
+            <span class="alias-chip" [style.background]="getAliasColor($index)">{{ detail.alias }}</span>
+            <strong>{{ detail.productName }}</strong>
+            <span style="color: var(--text-muted); font-size: 0.85rem;">{{ detail.categoryName }}</span>
+          </div>
+          <div class="table-responsive" style="margin-top: 8px;">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th class="rpt-th">Scope Key</th>
+                  <th class="rpt-th">Original Key</th>
+                  <th class="rpt-th" style="text-align:right;">Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (key of getScopeKeysForViewRef(detail.alias); track key) {
+                <tr>
+                  <td class="rpt-td"><code>{{ key }}</code></td>
+                  <td class="rpt-td" style="color: var(--text-muted); font-size: 0.85rem;">
+                    {{ key.substring(detail.alias.toLowerCase().length + 1) }}
+                  </td>
+                  <td class="rpt-td" style="text-align: right; font-family: monospace; font-weight: 600; color: var(--primary);">
+                    {{ formatNum(viewScope[key]) }}
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        }
+
+        <!-- Master Parameters Results -->
+        @if (viewingMaster.masterParams && viewingMaster.masterParams.length > 0) {
+        <mat-divider style="margin: 24px 0;"></mat-divider>
+
+        <div class="report-section-title">
+          <mat-icon style="color: #8b5cf6;">functions</mat-icon>
+          Master Parameter Results
+        </div>
+
+        <div class="table-responsive">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th class="rpt-th">Parameter Name</th>
+                <th class="rpt-th">Key</th>
+                <th class="rpt-th">Formula</th>
+                <th class="rpt-th" style="text-align:right;">Result</th>
+                <th class="rpt-th">Unit</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (param of viewingMaster.masterParams; track param.key) {
+              <tr>
+                <td class="rpt-td" style="font-weight: 500;">{{ param.name }}</td>
+                <td class="rpt-td"><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">{{ param.key }}</code></td>
+                <td class="rpt-td" style="font-family: monospace; font-size: 0.85rem; color: #7e22ce;">{{ param.formula }}</td>
+                <td class="rpt-td" style="text-align: right; font-family: monospace; font-weight: 700; font-size: 1.1rem; color: var(--primary);">
+                  {{ formatNum(viewScope[param.key.toLowerCase()]) }}
+                </td>
+                <td class="rpt-td" style="color: var(--text-muted);">{{ param.unit || '—' }}</td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        }
+
+      </mat-card-content>
+    </mat-card>
+  </div>
+  }
+
+</div>

@@ -30,7 +30,7 @@ export interface Parameter {
   formula: string;
   unit?: Unit | null;
   headerInfoId?: HeaderInfo | null;
-  categoryId?: Category | null;
+  categoryIds?: (Category | string)[];
   index?: number;
   createdAt?: string;
   updatedAt?: string;

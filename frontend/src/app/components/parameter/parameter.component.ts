@@ -87,7 +87,7 @@ export class ParameterComponent implements OnInit {
     formula: string;
     unitId: string;
     headerInfoId: string;
-    categoryId: string;
+    categoryIds: string[];
     index: number | null;
   } = {
     name: '',
@@ -96,7 +96,7 @@ export class ParameterComponent implements OnInit {
     formula: '',
     unitId: '',
     headerInfoId: '',
-    categoryId: '',
+    categoryIds: [],
     index: null,
   };
   editId = '';
@@ -125,8 +125,8 @@ export class ParameterComponent implements OnInit {
         }
 
         if (filter.categoryId) {
-          const catId = (data.categoryId as any)?._id || data.categoryId;
-          matchCat = catId === filter.categoryId;
+          const catIds = (data.categoryIds as any[])?.map((c: any) => c?._id || c) || [];
+          matchCat = catIds.includes(filter.categoryId);
         }
 
         if (filter.headerInfoId) {
@@ -242,14 +242,12 @@ export class ParameterComponent implements OnInit {
   }
 
   getAvailableParametersForFormula(): Parameter[] {
-    const catId = this.form.categoryId;
+    const catIds = this.form.categoryIds;
     return this.dataSource.data.filter(p => {
-      // Don't allow inserting itself
       if (this.editId && p._id === this.editId) return false;
-      
-      const pCat = (p.categoryId as any)?._id || p.categoryId;
-      // Include global parameters (no category) AND parameters in the selected category
-      return !pCat || pCat === catId;
+      const pCatIds = (p.categoryIds as any[])?.map((c: any) => c?._id || c) || [];
+      // Include global params (no categories) AND params that share any selected category
+      return pCatIds.length === 0 || catIds.some(cid => pCatIds.includes(cid));
     });
   }
 
@@ -284,7 +282,7 @@ export class ParameterComponent implements OnInit {
   openCreate(): void {
     this.editMode = false;
     this.editId = '';
-    this.form = { name: '', key: '', type: 'formula', formula: '', unitId: '', headerInfoId: '', categoryId: '', index: null };
+    this.form = { name: '', key: '', type: 'formula', formula: '', unitId: '', headerInfoId: '', categoryIds: [], index: null };
     this.formulaValid = null;
     this.extractedVars = [];
     this.formulaError = '';
@@ -301,7 +299,7 @@ export class ParameterComponent implements OnInit {
       formula: param.formula,
       unitId: (param.unit as any)?._id || '',
       headerInfoId: (param.headerInfoId as any)?._id || '',
-      categoryId: (param.categoryId as any)?._id || '',
+      categoryIds: ((param.categoryIds as any[]) || []).map((c: any) => c?._id || c),
       index: param.index !== undefined && param.index !== null ? param.index : null,
     };
     this.formulaValid = null;
@@ -309,7 +307,6 @@ export class ParameterComponent implements OnInit {
     this.formulaError = '';
     this.formVisible = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Trigger validation for the existing formula
     this.onFormulaChange(param.formula);
   }
 
@@ -342,7 +339,7 @@ export class ParameterComponent implements OnInit {
       formula: this.form.type === 'formula' ? this.form.formula : '',
       unit: this.form.unitId || null,
       headerInfoId: this.form.headerInfoId || null,
-      categoryId: this.form.categoryId || null,
+      categoryIds: this.form.categoryIds,
       index: this.form.index,
     };
 
@@ -375,11 +372,6 @@ export class ParameterComponent implements OnInit {
         this.snackBar.open(err.error?.message || 'Failed to delete', 'Close', { duration: 3000 });
       },
     });
-  }
-
-  getCategoryName(param: Parameter): string {
-    if (!param.categoryId) return '—';
-    return (param.categoryId as any).name || '—';
   }
 
   getUnitSymbol(param: Parameter): string {

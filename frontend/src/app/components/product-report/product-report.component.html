@@ -13,6 +13,28 @@
       <mat-icon style="margin-right: 8px;">{{ showHeader ? 'visibility_off' : 'visibility' }}</mat-icon>
       {{ showHeader ? 'Hide Header' : 'Show Header' }}
     </button>
+    
+    @if (hasCustomTemplate) {
+      <mat-button-toggle-group [(ngModel)]="activeView" class="view-toggle" style="background: white; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: 56px; align-items: center;">
+        <mat-button-toggle value="custom" style="padding: 0 8px;">
+          <mat-icon style="margin-right: 8px;">grid_on</mat-icon> Excel Report
+        </mat-button-toggle>
+        <mat-button-toggle value="standard" style="padding: 0 8px;">
+          <mat-icon style="margin-right: 8px;">list_alt</mat-icon> Detailed Breakdown
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      @if (activeView === 'custom' && templates.length > 1) {
+        <mat-form-field appearance="outline" style="width: 220px;" subscriptSizing="dynamic">
+          <mat-label>Select Template</mat-label>
+          <mat-select [(ngModel)]="selectedTemplateId" (selectionChange)="onTemplateChange()">
+            @for (tpl of templates; track tpl._id) {
+              <mat-option [value]="tpl._id">{{ tpl.templateName }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    }
     <a mat-stroked-button routerLink="/product" style="padding: 16px 32px; border-radius: 12px; color: #475569; border-color: #cbd5e1; background: white;">
       <mat-icon style="margin-right: 8px;">arrow_back</mat-icon> Back to Products
     </a>
@@ -45,37 +67,6 @@
       }
 
       @if (hasCustomTemplate) {
-        
-        <!-- View Toggle Buttons -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 1rem 0; border-bottom: 1px solid #e2e8f0;">
-          <mat-button-toggle-group [(ngModel)]="activeView" class="view-toggle">
-            <mat-button-toggle value="custom">
-              <mat-icon style="margin-right: 8px;">grid_on</mat-icon> Excel Report
-            </mat-button-toggle>
-            <mat-button-toggle value="standard">
-              <mat-icon style="margin-right: 8px;">list_alt</mat-icon> Detailed Breakdown
-            </mat-button-toggle>
-          </mat-button-toggle-group>
-
-          <div style="display: flex; gap: 16px; align-items: center;">
-            @if (activeView === 'custom' && templates.length > 1) {
-              <mat-form-field appearance="outline" style="margin-bottom: -1.25em; width: 250px;">
-                <mat-label>Select Template</mat-label>
-                <mat-select [(ngModel)]="selectedTemplateId" (selectionChange)="onTemplateChange()">
-                  @for (tpl of templates; track tpl._id) {
-                    <mat-option [value]="tpl._id">{{ tpl.templateName }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            }
-
-            <button mat-stroked-button (click)="showHeader = !showHeader" style="font-size:0.85rem; border-color:#cbd5e1; color:#475569;">
-              <mat-icon style="margin-right:4px; font-size:16px; width:16px; height:16px;">{{ showHeader ? 'visibility_off' : 'visibility' }}</mat-icon>
-              {{ showHeader ? 'Hide Header' : 'Show Header' }}
-            </button>
-          </div>
-        </div>
-
         @if (activeView === 'custom') {
           <div class="custom-template-wrapper">
             <table class="report-grid">

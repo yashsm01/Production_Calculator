@@ -14,11 +14,13 @@ import {
   ReportHistory,
 } from '../models/interfaces';
 
-const BASE = 'http://13.234.110.205:5000/api';
+const BASE = 'http://localhost:5000/api';
+// const BASE = 'http://13.234.110.205:5000/api';
+
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // ── Category ──────────────────────────────────────────────────────────────
   getCategories(): Observable<Category[]> {

@@ -6,221 +6,259 @@
 
   <!-- Product Selection & Actions -->
   <mat-card appearance="outlined" style="margin-bottom: 24px;">
-    <mat-card-content style="padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <mat-card-content
+      style="padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
       <mat-form-field appearance="outline" style="width: 100%; max-width: 400px; margin-bottom: -1.25em;">
         <mat-label>Select Product to Template</mat-label>
         <mat-select [(ngModel)]="selectedProductId" (selectionChange)="onProductChange()">
           @for (prod of products; track prod._id) {
-            <mat-option [value]="prod._id">{{ prod.name }} ({{ prod.categoryId.name }})</mat-option>
+          <mat-option [value]="prod._id">{{ prod.name }} ({{ prod.categoryId.name }})</mat-option>
           }
         </mat-select>
       </mat-form-field>
 
       @if (selectedProductId) {
-        <mat-form-field appearance="outline" style="width: 100%; max-width: 300px; margin-bottom: -1.25em;">
-          <mat-label>Select Template</mat-label>
-          <mat-select [(ngModel)]="selectedTemplateId" (selectionChange)="onTemplateChange()">
-            @for (tpl of templates; track tpl._id) {
-              <mat-option [value]="tpl._id">{{ tpl.templateName }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+      <mat-form-field appearance="outline" style="width: 100%; max-width: 300px; margin-bottom: -1.25em;">
+        <mat-label>Select Template</mat-label>
+        <mat-select [(ngModel)]="selectedTemplateId" (selectionChange)="onTemplateChange()">
+          @for (tpl of templates; track tpl._id) {
+          <mat-option [value]="tpl._id">{{ tpl.templateName }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
 
-        <button mat-stroked-button color="primary" (click)="createNewTemplate()" style="margin-bottom: -1.25em;">
-          <mat-icon>add</mat-icon> New Template
-        </button>
+      <button mat-stroked-button color="primary" (click)="createNewTemplate()" style="margin-bottom: -1.25em;">
+        <mat-icon>add</mat-icon> New Template
+      </button>
       }
 
       @if (selectedProductId) {
-        <div style="display: flex; gap: 12px; align-items: center;">
-          <button mat-stroked-button (click)="undo()" [disabled]="undoStack.length === 0" matTooltip="Undo last change">
-            <mat-icon>undo</mat-icon> Undo
-          </button>
-          <button mat-flat-button color="primary" [disabled]="saving" (click)="saveTemplate()">
-            @if (saving) {
-              <ng-container>
-                <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon> Saving...
-              </ng-container>
-            } @else {
-              <ng-container>
-                <mat-icon>save</mat-icon> Save Template
-              </ng-container>
-            }
-          </button>
-          
-          <button mat-stroked-button color="warn" (click)="deleteTemplate()">
-            <mat-icon>delete</mat-icon> Delete Template
-          </button>
-        </div>
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button mat-stroked-button (click)="undo()" [disabled]="undoStack.length === 0" matTooltip="Undo last change">
+          <mat-icon>undo</mat-icon> Undo
+        </button>
+        <button mat-flat-button color="primary" [disabled]="saving" (click)="saveTemplate()">
+          @if (saving) {
+          <ng-container>
+            <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon> Saving...
+          </ng-container>
+          } @else {
+          <ng-container>
+            <mat-icon>save</mat-icon> Save Template
+          </ng-container>
+          }
+        </button>
+
+        <button mat-stroked-button color="warn" (click)="deleteTemplate()">
+          <mat-icon>delete</mat-icon> Delete Template
+        </button>
+      </div>
       }
     </mat-card-content>
   </mat-card>
 
   @if (loading) {
-    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
-      <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon>
-      <p>Loading layout...</p>
-    </div>
+  <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+    <mat-icon style="animation:spin 1s linear infinite;">sync</mat-icon>
+    <p>Loading layout...</p>
+  </div>
   } @else if (selectedProductId && !selectedTemplateId && !loading) {
-    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
-      <mat-icon style="font-size: 48px; width: 48px; height: 48px; margin-bottom: 16px;">post_add</mat-icon>
-      <p style="font-size: 1.2rem;">No template selected.</p>
-      <p>Select a template from the dropdown or create a new one.</p>
-    </div>
+  <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+    <mat-icon style="font-size: 48px; width: 48px; height: 48px; margin-bottom: 16px;">post_add</mat-icon>
+    <p style="font-size: 1.2rem;">No template selected.</p>
+    <p>Select a template from the dropdown or create a new one.</p>
+  </div>
   } @else if (selectedProductId && selectedTemplateId) {
-    <div style="display: flex; gap: 24px; align-items: flex-start;">
-      
-      <!-- LEFT SIDEBAR: Parameters -->
-      <div style="width: 300px; flex-shrink: 0;">
-        <mat-card appearance="outlined">
-          <mat-card-header>
-            <mat-card-title style="font-size: 1.1rem;">Parameters</mat-card-title>
-            <mat-card-subtitle>Drag into the grid</mat-card-subtitle>
-          </mat-card-header>
-          <mat-divider></mat-divider>
-          <mat-card-content style="padding: 0; max-height: 600px; overflow-y: auto;">
-            <div class="param-list" style="padding: 8px;">
-              @for (group of getGroupedParameters(); track group.header) {
-                <div style="margin-bottom: 16px;">
-                  <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-                    {{ group.header }}
-                  </h4>
-                  @for (p of group.parameters; track p.key) {
-                    <div class="draggable-param" draggable="true" (dragstart)="onDragStart($event, p.key)">
-                      <mat-icon style="color: #94a3b8; margin-right: 8px;">drag_indicator</mat-icon>
-                      <div>
-                        <div style="font-weight: 500; font-size: 0.9rem;">{{ p.name }}</div>
-                        <div style="font-size: 0.75rem; color: #64748b; font-family: monospace;">{{ p.key }}</div>
-                      </div>
-                    </div>
-                  }
+  <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+    <!-- LEFT SIDEBAR: Parameters -->
+    <div style="width: 300px; flex-shrink: 0;">
+      <mat-card appearance="outlined">
+        <mat-card-header>
+          <mat-card-title style="font-size: 1.1rem;">Parameters</mat-card-title>
+          <mat-card-subtitle>Drag into the grid</mat-card-subtitle>
+        </mat-card-header>
+        <mat-divider></mat-divider>
+        <mat-card-content style="padding: 0; max-height: 600px; overflow-y: auto;">
+          <div class="param-list" style="padding: 8px;">
+            @for (group of getGroupedParameters(); track group.header) {
+            <div style="margin-bottom: 16px;">
+              <h4
+                style="margin: 0 0 8px 0; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+                {{ group.header }}
+              </h4>
+              @for (p of group.parameters; track p.key) {
+              <div class="draggable-param" draggable="true" (dragstart)="onDragStart($event, p.key)">
+                <mat-icon style="color: #94a3b8; margin-right: 8px;">drag_indicator</mat-icon>
+                <div>
+                  <div style="font-weight: 500; font-size: 0.9rem;">{{ p.name }}</div>
+                  <div style="font-size: 0.75rem; color: #64748b; font-family: monospace;">{{ p.key }}</div>
                 </div>
+              </div>
               }
             </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
 
-      <!-- RIGHT SIDE: Grid Canvas -->
-      <div style="flex: 1; min-width: 0;">
-        <mat-card appearance="outlined">
-          <!-- Toolbar -->
-          <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #f8fafc;">
-            <div style="display: flex; gap: 16px; align-items: center;">
-              <div>
-                <span style="font-size: 0.85rem; color: var(--text-muted); margin-right: 8px;">Rows: {{ template.rowCount }}</span>
-                <button mat-icon-button (click)="removeRow()" [disabled]="template.rowCount <= 1"><mat-icon>remove</mat-icon></button>
-                <button mat-icon-button (click)="addRow()"><mat-icon>add</mat-icon></button>
-              </div>
-              <div>
-                <span style="font-size: 0.85rem; color: var(--text-muted); margin-right: 8px;">Cols: {{ template.colCount }}</span>
-                <button mat-icon-button (click)="removeCol()" [disabled]="template.colCount <= 1"><mat-icon>remove</mat-icon></button>
-                <button mat-icon-button (click)="addCol()"><mat-icon>add</mat-icon></button>
-              </div>
-
-              <!-- Zoom Controls -->
-              <div style="display:flex; align-items:center; gap:2px; border-left:1px solid #e2e8f0; padding-left:12px;">
-                <button mat-icon-button (click)="zoomOut()" matTooltip="Zoom Out" [disabled]="zoomLevel <= 0.3"><mat-icon>zoom_out</mat-icon></button>
-                <span style="font-size:0.85rem; color:var(--text-muted); min-width:40px; text-align:center; cursor:pointer;" (click)="zoomReset()" matTooltip="Reset Zoom">{{ (zoomLevel * 100).toFixed(0) }}%</span>
-                <button mat-icon-button (click)="zoomIn()" matTooltip="Zoom In" [disabled]="zoomLevel >= 3"><mat-icon>zoom_in</mat-icon></button>
-              </div>
+    <!-- RIGHT SIDE: Grid Canvas -->
+    <div style="flex: 1; min-width: 0;">
+      <mat-card appearance="outlined">
+        <!-- Toolbar -->
+        <div
+          style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #f8fafc;">
+          <div style="display: flex; gap: 16px; align-items: center;">
+            <div>
+              <span style="font-size: 0.85rem; color: var(--text-muted); margin-right: 8px;">Rows: {{ template.rowCount
+                }}</span>
+              <button mat-icon-button (click)="removeRow()"
+                [disabled]="template.rowCount <= 1"><mat-icon>remove</mat-icon></button>
+              <button mat-icon-button (click)="addRow()"><mat-icon>add</mat-icon></button>
             </div>
             <div>
-              <button mat-stroked-button color="warn" (click)="deleteTemplate()" style="margin-right: 8px;">Delete Template</button>
-              <button mat-flat-button color="primary" (click)="saveTemplate()" [disabled]="saving">
-                {{ saving ? 'Saving...' : 'Save Template' }}
-              </button>
+              <span style="font-size: 0.85rem; color: var(--text-muted); margin-right: 8px;">Cols: {{ template.colCount
+                }}</span>
+              <button mat-icon-button (click)="removeCol()"
+                [disabled]="template.colCount <= 1"><mat-icon>remove</mat-icon></button>
+              <button mat-icon-button (click)="addCol()"><mat-icon>add</mat-icon></button>
+            </div>
+
+            <!-- Zoom Controls -->
+            <div style="display:flex; align-items:center; gap:2px; border-left:1px solid #e2e8f0; padding-left:12px;">
+              <button mat-icon-button (click)="zoomOut()" matTooltip="Zoom Out"
+                [disabled]="zoomLevel <= 0.3"><mat-icon>zoom_out</mat-icon></button>
+              <span
+                style="font-size:0.85rem; color:var(--text-muted); min-width:40px; text-align:center; cursor:pointer;"
+                (click)="zoomReset()" matTooltip="Reset Zoom">{{ (zoomLevel * 100).toFixed(0) }}%</span>
+              <button mat-icon-button (click)="zoomIn()" matTooltip="Zoom In"
+                [disabled]="zoomLevel >= 3"><mat-icon>zoom_in</mat-icon></button>
             </div>
           </div>
+          <div>
+            <button mat-stroked-button color="warn" (click)="deleteTemplate()" style="margin-right: 8px;">Delete
+              Template</button>
+            <button mat-flat-button color="primary" (click)="saveTemplate()" [disabled]="saving">
+              {{ saving ? 'Saving...' : 'Save Template' }}
+            </button>
+          </div>
+        </div>
 
-          <!-- Cell Editor inline toolbar -->
-          @if (selectedCell) {
-            <div style="padding: 16px; border-bottom: 1px solid var(--border); background: #f1f5f9; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-              <div style="font-family: monospace; font-weight: bold; padding: 4px 8px; background: #e2e8f0; border-radius: 4px;">
-                R{{selectedCell.row + 1}}C{{selectedCell.col + 1}}
-              </div>
-              
-              <mat-form-field appearance="outline" style="margin-bottom: -1.25em; flex: 1; min-width: 200px;">
-                <mat-label>Content</mat-label>
-                <input matInput [(ngModel)]="cellEditContent" (ngModelChange)="applyCellEdit()" placeholder="Type text or drag param">
-              </mat-form-field>
+        <!-- Cell Editor inline toolbar -->
+        @if (selectedCell) {
+        <div
+          style="padding: 16px; border-bottom: 1px solid var(--border); background: #f1f5f9; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+          <div
+            style="font-family: monospace; font-weight: bold; padding: 4px 8px; background: #e2e8f0; border-radius: 4px;">
+            R{{selectedCell.row + 1}}C{{selectedCell.col + 1}}
+          </div>
 
-              <mat-button-toggle-group [(ngModel)]="cellEditBold" (ngModelChange)="applyCellEdit()">
-                <mat-button-toggle [value]="true" matTooltip="Bold"><mat-icon>format_bold</mat-icon></mat-button-toggle>
-              </mat-button-toggle-group>
+          <mat-form-field appearance="outline" style="margin-bottom: -1.25em; flex: 1; min-width: 200px;">
+            <mat-label>Content</mat-label>
+            <input matInput [(ngModel)]="cellEditContent" (ngModelChange)="applyCellEdit()"
+              placeholder="Type text or drag param">
+          </mat-form-field>
 
-              <mat-button-toggle-group [(ngModel)]="cellEditAlign" (ngModelChange)="applyCellEdit()">
-                <mat-button-toggle value="left" matTooltip="Align Left"><mat-icon>format_align_left</mat-icon></mat-button-toggle>
-                <mat-button-toggle value="center" matTooltip="Align Center"><mat-icon>format_align_center</mat-icon></mat-button-toggle>
-                <mat-button-toggle value="right" matTooltip="Align Right"><mat-icon>format_align_right</mat-icon></mat-button-toggle>
-              </mat-button-toggle-group>
+          <mat-button-toggle-group [(ngModel)]="cellEditBold" (ngModelChange)="applyCellEdit()">
+            <mat-button-toggle [value]="true" matTooltip="Bold"><mat-icon>format_bold</mat-icon></mat-button-toggle>
+          </mat-button-toggle-group>
 
-              <div style="border-left: 1px solid #cbd5e1; height: 32px; margin: 0 8px;"></div>
+          <mat-button-toggle-group [(ngModel)]="cellEditAlign" (ngModelChange)="applyCellEdit()">
+            <mat-button-toggle value="left"
+              matTooltip="Align Left"><mat-icon>format_align_left</mat-icon></mat-button-toggle>
+            <mat-button-toggle value="center"
+              matTooltip="Align Center"><mat-icon>format_align_center</mat-icon></mat-button-toggle>
+            <mat-button-toggle value="right"
+              matTooltip="Align Right"><mat-icon>format_align_right</mat-icon></mat-button-toggle>
+          </mat-button-toggle-group>
 
-              <div style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px;">
-                <span style="font-size: 0.75rem; color: #64748b; padding: 0 8px;">Col Span:</span>
-                <input type="number" min="1" max="10" [(ngModel)]="cellEditColSpan" (change)="applyCellEdit()" style="width: 40px; border: none; outline: none; text-align: center;">
-              </div>
+          <div style="border-left: 1px solid #cbd5e1; height: 32px; margin: 0 8px;"></div>
 
-              <div style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px;">
-                <span style="font-size: 0.75rem; color: #64748b; padding: 0 8px;">Row Span:</span>
-                <input type="number" min="1" max="10" [(ngModel)]="cellEditRowSpan" (change)="applyCellEdit()" style="width: 40px; border: none; outline: none; text-align: center;">
-              </div>
+          <div
+            style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px;">
+            <span style="font-size: 0.75rem; color: #64748b; padding: 0 8px;">Col Span:</span>
+            <input type="number" min="1" max="10" [(ngModel)]="cellEditColSpan" (change)="applyCellEdit()"
+              style="width: 40px; border: none; outline: none; text-align: center;">
+          </div>
 
-              <mat-button-toggle-group [(ngModel)]="cellEditThickBorder" (ngModelChange)="applyCellEdit()">
-                <mat-button-toggle [value]="true" matTooltip="Thick Border"><mat-icon>border_outer</mat-icon></mat-button-toggle>
-              </mat-button-toggle-group>
+          <div
+            style="display: flex; align-items: center; background: white; border: 1px solid #cbd5e1; border-radius: 4px; padding: 2px;">
+            <span style="font-size: 0.75rem; color: #64748b; padding: 0 8px;">Row Span:</span>
+            <input type="number" min="1" max="10" [(ngModel)]="cellEditRowSpan" (change)="applyCellEdit()"
+              style="width: 40px; border: none; outline: none; text-align: center;">
+          </div>
 
-              <div style="border-left: 1px solid #cbd5e1; height: 32px; margin: 0 4px;"></div>
+          <mat-button-toggle-group [(ngModel)]="cellEditThickBorder" (ngModelChange)="applyCellEdit()">
+            <mat-button-toggle [value]="true"
+              matTooltip="Thick Border"><mat-icon>border_outer</mat-icon></mat-button-toggle>
+          </mat-button-toggle-group>
 
-              <!-- Background Color -->
-              <div style="display:flex; align-items:center; gap:4px;" matTooltip="Background Color">
-                <span style="font-size:0.7rem; color:#64748b;">BG</span>
-                <div style="position:relative; width:28px; height:28px; border-radius:4px; border:1px solid #cbd5e1; overflow:hidden; cursor:pointer;" [style.background]="cellEditBgColor || 'white'">
-                  <input type="color" [(ngModel)]="cellEditBgColor" (change)="applyCellEdit()" style="opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer;">
-                </div>
-                <button mat-icon-button style="width:20px; height:20px; font-size:12px;" (click)="cellEditBgColor=''; applyCellEdit()" matTooltip="Clear BG">
-                  <mat-icon style="font-size:14px; width:14px; height:14px;">close</mat-icon>
-                </button>
-              </div>
+          <div style="border-left: 1px solid #cbd5e1; height: 32px; margin: 0 4px;"></div>
 
-              <!-- Font Color -->
-              <div style="display:flex; align-items:center; gap:4px;" matTooltip="Font Color">
-                <span style="font-size:0.7rem; color:#64748b;">A</span>
-                <div style="position:relative; width:28px; height:28px; border-radius:4px; border:1px solid #cbd5e1; overflow:hidden; cursor:pointer;" [style.background]="cellEditFontColor || '#0f172a'">
-                  <input type="color" [(ngModel)]="cellEditFontColor" (change)="applyCellEdit()" style="opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer;">
-                </div>
-                <button mat-icon-button style="width:20px; height:20px; font-size:12px;" (click)="cellEditFontColor=''; applyCellEdit()" matTooltip="Reset Font Color">
-                  <mat-icon style="font-size:14px; width:14px; height:14px;">close</mat-icon>
-                </button>
-              </div>
-
-              <div style="border-left: 1px solid #cbd5e1; height: 32px; margin: 0 4px;"></div>
-
-              <!-- Copy / Paste -->
-              <button mat-icon-button (click)="copySelectedCells()" matTooltip="Copy (Ctrl+C)"><mat-icon>content_copy</mat-icon></button>
-              <button mat-icon-button (click)="pasteSelectedCells()" matTooltip="Paste (Ctrl+V)" [disabled]="!copiedCells.length"><mat-icon>content_paste</mat-icon></button>
-
-              <button mat-icon-button color="warn" (click)="clearCell()" matTooltip="Clear cell"><mat-icon>clear</mat-icon></button>
+          <!-- Background Color -->
+          <div style="display:flex; align-items:center; gap:4px;" matTooltip="Background Color">
+            <span style="font-size:0.7rem; color:#64748b;">BG</span>
+            <div
+              style="position:relative; width:28px; height:28px; border-radius:4px; border:1px solid #cbd5e1; overflow:hidden; cursor:pointer;"
+              [style.background]="cellEditBgColor || 'white'">
+              <input type="color" [(ngModel)]="cellEditBgColor" (change)="applyCellEdit()"
+                style="opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer;">
             </div>
-          } @else {
-            <div style="padding: 16px; border-bottom: 1px solid var(--border); background: #f1f5f9; color: #64748b; font-size: 0.9rem;">
-              Click a cell to edit or drag a parameter into it.
-            </div>
-          }
+            <input type="text" [(ngModel)]="cellEditBgColor" (change)="applyCellEdit()" placeholder="#FFFFFF"
+              style="width: 65px; font-size: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; outline: none; height: 20px;">
+            <button mat-icon-button style="width:20px; height:20px; font-size:12px;"
+              (click)="cellEditBgColor=''; applyCellEdit()" matTooltip="Clear BG">
+              <mat-icon style="font-size:14px; width:14px; height:14px;">close</mat-icon>
+            </button>
+          </div>
 
-          <!-- Grid -->
-          <div style="overflow: auto; max-height: calc(100vh - 350px); border-top: 1px solid var(--border);">
-            <!-- Zoom wrapper: scale from top-left origin so scroll works naturally -->
-            <div [style.transform]="'scale(' + zoomLevel + ')'"
-                 [style.transform-origin]="'top left'"
-                 style="padding: 24px; display: inline-block; min-width: max-content;">
-              <table class="report-grid" style="border-collapse: collapse;">
+          <!-- Font Color -->
+          <div style="display:flex; align-items:center; gap:4px;" matTooltip="Font Color">
+            <span style="font-size:0.7rem; color:#64748b;">A</span>
+            <div
+              style="position:relative; width:28px; height:28px; border-radius:4px; border:1px solid #cbd5e1; overflow:hidden; cursor:pointer;"
+              [style.background]="cellEditFontColor || '#0f172a'">
+              <input type="color" [(ngModel)]="cellEditFontColor" (change)="applyCellEdit()"
+                style="opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer;">
+            </div>
+            <input type="text" [(ngModel)]="cellEditFontColor" (change)="applyCellEdit()" placeholder="#000000"
+              style="width: 65px; font-size: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; outline: none; height: 20px;">
+            <button mat-icon-button style="width:20px; height:20px; font-size:12px;"
+              (click)="cellEditFontColor=''; applyCellEdit()" matTooltip="Reset Font Color">
+              <mat-icon style="font-size:14px; width:14px; height:14px;">close</mat-icon>
+            </button>
+          </div>
+
+          <div style="border-left: 1px solid #cbd5e1; height: 32px; margin: 0 4px;"></div>
+
+          <!-- Copy / Paste -->
+          <button mat-icon-button (click)="copySelectedCells()"
+            matTooltip="Copy (Ctrl+C)"><mat-icon>content_copy</mat-icon></button>
+          <button mat-icon-button (click)="pasteSelectedCells()" matTooltip="Paste (Ctrl+V)"
+            [disabled]="!copiedCells.length"><mat-icon>content_paste</mat-icon></button>
+
+          <button mat-icon-button color="warn" (click)="clearCell()"
+            matTooltip="Clear cell"><mat-icon>clear</mat-icon></button>
+        </div>
+        } @else {
+        <div
+          style="padding: 16px; border-bottom: 1px solid var(--border); background: #f1f5f9; color: #64748b; font-size: 0.9rem;">
+          Click a cell to edit or drag a parameter into it.
+        </div>
+        }
+
+        <!-- Grid -->
+        <div style="overflow: auto; max-height: calc(100vh - 150px); border-top: 1px solid var(--border);">
+          <!-- Zoom wrapper: scale from top-left origin so scroll works naturally -->
+          <div [style.transform]="'scale(' + zoomLevel + ')'" [style.transform-origin]="'top left'"
+            style="padding: 24px; display: inline-block; min-width: max-content;">
+            <table class="report-grid" style="border-collapse: collapse;">
               <!-- colgroup to enforce widths -->
               <colgroup>
                 <col style="width: 20px;"><!-- row-resize handle column -->
                 @for (c of getColsArray(); track c) {
-                  <col [style.width.px]="getColWidth(c)">
+                <col [style.width.px]="getColWidth(c)">
                 }
               </colgroup>
 
@@ -229,63 +267,60 @@
                 <tr style="height: 18px;">
                   <th style="background:#e2e8f0; border:1px solid #cbd5e1; width:20px;"></th>
                   @for (c of getColsArray(); track c) {
-                    <th style="background:#e2e8f0; border:1px solid #cbd5e1; position:relative; padding:0; min-width:40px; user-select:none;">
-                      <span style="display:block; text-align:center; font-size:0.65rem; color:#64748b; line-height:18px;">{{ c + 1 }}</span>
-                      <!-- Column resize handle -->
-                      <div class="col-resize-handle"
-                           (mousedown)="startColResize($event, c)">
-                      </div>
-                    </th>
+                  <th
+                    style="background:#e2e8f0; border:1px solid #cbd5e1; position:relative; padding:0; min-width:40px; user-select:none;">
+                    <span
+                      style="display:block; text-align:center; font-size:0.65rem; color:#64748b; line-height:18px;">{{ c
+                      + 1 }}</span>
+                    <!-- Column resize handle -->
+                    <div class="col-resize-handle" (mousedown)="startColResize($event, c)">
+                    </div>
+                  </th>
                   }
                 </tr>
               </thead>
 
               <tbody>
                 @for (r of getRowsArray(); track r) {
-                  <tr [style.height.px]="getRowHeight(r)">
-                    <!-- Row resize handle cell -->
-                    <td style="background:#e2e8f0; border:1px solid #cbd5e1; width:20px; padding:0; position:relative; user-select:none;">
-                      <span style="display:block; text-align:center; font-size:0.6rem; color:#64748b; line-height:1;">{{ r + 1 }}</span>
-                      <div class="row-resize-handle"
-                           (mousedown)="startRowResize($event, r)">
-                      </div>
-                    </td>
-                    @for (c of getColsArray(); track c) {
-                      @if (!isCellHidden(r, c)) {
-                        <td 
-                          [attr.colspan]="getCell(r, c)?.colSpan || 1"
-                          [attr.rowspan]="getCell(r, c)?.rowSpan || 1"
-                          [class.selected]="isSelected(r, c)"
-                          [style.border]="getCell(r, c)?.thickBorder ? '3px solid #0f172a' : '1px solid #cbd5e1'"
-                          [style.background]="getCell(r, c)?.bgColor || ''"
-                          (click)="selectCell(r, c, $event)"
-                          (dragover)="onDragOver($event)"
-                          (drop)="onDrop($event, r, c)">
-                          
-                          @if (getCell(r, c); as cell) {
-                            <div [style.font-weight]="cell.bold ? 'bold' : 'normal'"
-                                 [style.text-align]="cell.align"
-                                 [style.color]="cell.fontColor || ''"
-                                 class="cell-content">
-                              @if (cell.type === 'parameter') {
-                                <span class="param-badge">{{ getParameterName(cell.content) }}</span>
-                              } @else {
-                                {{ cell.content }}
-                              }
-                            </div>
-                          }
-                        </td>
+                <tr [style.height.px]="getRowHeight(r)">
+                  <!-- Row resize handle cell -->
+                  <td
+                    style="background:#e2e8f0; border:1px solid #cbd5e1; width:20px; padding:0; position:relative; user-select:none;">
+                    <span style="display:block; text-align:center; font-size:0.6rem; color:#64748b; line-height:1;">{{ r
+                      + 1 }}</span>
+                    <div class="row-resize-handle" (mousedown)="startRowResize($event, r)">
+                    </div>
+                  </td>
+                  @for (c of getColsArray(); track c) {
+                  @if (!isCellHidden(r, c)) {
+                  <td [attr.colspan]="getCell(r, c)?.colSpan || 1" [attr.rowspan]="getCell(r, c)?.rowSpan || 1"
+                    [class.selected]="isSelected(r, c)"
+                    [style.border]="getCell(r, c)?.thickBorder ? '3px solid #0f172a' : '1px solid #cbd5e1'"
+                    [style.background]="getCell(r, c)?.bgColor || ''" (click)="selectCell(r, c, $event)"
+                    (dragover)="onDragOver($event)" (drop)="onDrop($event, r, c)">
+
+                    @if (getCell(r, c); as cell) {
+                    <div [style.font-weight]="cell.bold ? 'bold' : 'normal'" [style.text-align]="cell.align"
+                      [style.color]="cell.fontColor || ''" class="cell-content">
+                      @if (cell.type === 'parameter') {
+                      <span class="param-badge">{{ getParameterName(cell.content) }}</span>
+                      } @else {
+                      {{ cell.content }}
                       }
+                    </div>
                     }
-                  </tr>
+                  </td>
+                  }
+                  }
+                </tr>
                 }
               </tbody>
             </table>
-            </div><!-- /zoom wrapper -->
-          </div><!-- /overflow auto -->
-        </mat-card>
-      </div>
-
+          </div><!-- /zoom wrapper -->
+        </div><!-- /overflow auto -->
+      </mat-card>
     </div>
+
+  </div>
   }
 </div>

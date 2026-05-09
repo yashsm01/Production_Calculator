@@ -35,11 +35,12 @@ const parameterSchema = new mongoose.Schema(
       ref: 'HeaderInfo',
       default: null,
     },
-    categoryId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
-      default: null,
-    },
+    categoryIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+      }
+    ],
     index: {
       type: Number,
       default: null,

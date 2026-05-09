@@ -12,7 +12,9 @@ const productRoutes = require('./routes/product');
 const headerInfoRoutes = require('./routes/headerInfo');
 const reportTemplateRoutes = require('./routes/reportTemplate');
 const reportHistoryRoutes = require('./routes/reportHistory');
+const authRoutes = require('./routes/auth');
 const errorHandler = require('./middleware/errorHandler');
+const { protect } = require('./middleware/auth');
 
 const app = express();
 
@@ -21,13 +23,16 @@ app.use(cors());
 app.use(express.json());
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use('/api/category', categoryRoutes);
-app.use('/api/unit', unitRoutes);
-app.use('/api/parameter', parameterRoutes);
-app.use('/api/product', productRoutes);
-app.use('/api/header-info', headerInfoRoutes);
-app.use('/api/report-template', reportTemplateRoutes);
-app.use('/api/report-history', reportHistoryRoutes);
+app.use('/api/auth', authRoutes);
+
+// Protected Routes
+app.use('/api/category', protect, categoryRoutes);
+app.use('/api/unit', protect, unitRoutes);
+app.use('/api/parameter', protect, parameterRoutes);
+app.use('/api/product', protect, productRoutes);
+app.use('/api/header-info', protect, headerInfoRoutes);
+app.use('/api/report-template', protect, reportTemplateRoutes);
+app.use('/api/report-history', protect, reportHistoryRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

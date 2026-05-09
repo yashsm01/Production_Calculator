@@ -71,17 +71,17 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="form-field-half">
-          <mat-label>Category (optional)</mat-label>
-          <mat-select [(ngModel)]="form.categoryId">
+          <mat-label>Categories (optional, multi-select)</mat-label>
+          <mat-select [(ngModel)]="form.categoryIds" multiple>
             <mat-option>
               <ngx-mat-select-search [(ngModel)]="catSearch" (ngModelChange)="filterCategories()"
                 placeholderLabel="Search categories..."></ngx-mat-select-search>
             </mat-option>
-            <mat-option value="">— Global / None —</mat-option>
             @for (cat of filteredCategories; track cat._id) {
             <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
             }
           </mat-select>
+          <mat-hint>Leave empty to make this parameter global (applies to all categories)</mat-hint>
         </mat-form-field>
       </div>
 
@@ -236,8 +236,18 @@
         </ng-container>
 
         <ng-container matColumnDef="categoryId">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header> Category </th>
-          <td mat-cell *matCellDef="let element"> {{ getCategoryName(element) }} </td>
+          <th mat-header-cell *matHeaderCellDef> Categories </th>
+          <td mat-cell *matCellDef="let element">
+            @if (element.categoryIds && element.categoryIds.length > 0) {
+              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                @for (cat of element.categoryIds; track cat._id || cat) {
+                  <span style="font-size:0.7rem; padding:2px 7px; border-radius:10px; background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe;">{{ cat.name || cat }}</span>
+                }
+              </div>
+            } @else {
+              <span style="color:var(--text-muted); font-size:0.85rem;">Global</span>
+            }
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="actions">

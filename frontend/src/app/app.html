@@ -1,3 +1,4 @@
+@if (authService.currentUserValue) {
 <mat-toolbar color="primary" class="app-toolbar">
   <div class="toolbar-brand" routerLink="/">
     <mat-icon style="margin-right: 8px;">calculate</mat-icon>
@@ -21,10 +22,14 @@
   <a mat-button routerLink="/product" routerLinkActive="active-link">
     <mat-icon>inventory_2</mat-icon> Products
   </a>
-  <a mat-button routerLink="/report-builder" routerLinkActive="active-link" style="background-color: rgba(255,255,255,0.1); border-radius: 4px;">
+  <a mat-button routerLink="/report-builder" routerLinkActive="active-link" style="background-color: rgba(255,255,255,0.1); border-radius: 4px; margin-right: 16px;">
     <mat-icon>grid_on</mat-icon> Template Builder
   </a>
+  <button mat-button (click)="logout()">
+    <mat-icon>logout</mat-icon> Logout
+  </button>
 </mat-toolbar>
+}
 
 <main class="page-container">
   <router-outlet></router-outlet>

@@ -383,7 +383,7 @@ export class ReportBuilder implements OnInit {
     
     const tsv = textRows.map(r => r.join('\t')).join('\n');
     this.lastInternalTsv = tsv;
-    navigator.clipboard.writeText(tsv).catch(err => console.error('Could not copy text: ', err));
+    this.copyToClipboard(tsv);
 
     this.snackBar.open('Copied ' + this.copiedCells.length + ' cell(s)', 'Close', { duration: 2000 });
   }
@@ -702,5 +702,34 @@ export class ReportBuilder implements OnInit {
     });
 
     return result;
+  }
+  private copyToClipboard(text: string): void {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(err => {
+        console.error('Clipboard API failed, falling back...', err);
+        this.copyToClipboardFallback(text);
+      });
+    } else {
+      this.copyToClipboardFallback(text);
+    }
+  }
+
+  private copyToClipboardFallback(text: string): void {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '0';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      const successful = document.execCommand('copy');
+      if (!successful) console.error('document.execCommand(copy) was unsuccessful');
+    } catch (err) {
+      console.error('Fallback copy failed', err);
+    }
+    document.body.removeChild(textArea);
   }
 }

@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
-
-const BASE = 'http://localhost:5000/api/auth';
+import { BASE } from './api.service';
 
 export interface User {
   _id: string;
@@ -34,7 +33,7 @@ export class AuthService {
   }
 
   login(username: string, password: string): Observable<User> {
-    return this.http.post<User>(`${BASE}/login`, { username, password }).pipe(
+    return this.http.post<User>(`${BASE}/auth/login`, { username, password }).pipe(
       tap(user => {
         if (user && user.token) {
           localStorage.setItem('user', JSON.stringify(user));
@@ -45,7 +44,7 @@ export class AuthService {
   }
 
   register(username: string, password: string, role: string = 'user'): Observable<User> {
-    return this.http.post<User>(`${BASE}/register`, { username, password, role }).pipe(
+    return this.http.post<User>(`${BASE}/auth/register`, { username, password, role }).pipe(
       tap(user => {
         if (user && user.token) {
           localStorage.setItem('user', JSON.stringify(user));

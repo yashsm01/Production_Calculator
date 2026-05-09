@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
 import {
   Category,
@@ -14,8 +15,7 @@ import {
   ReportHistory,
 } from '../models/interfaces';
 
-// const BASE = 'http://localhost:5000/api';
-const BASE = 'http://13.234.110.205:5000/api';
+export const BASE = environment.apiUrl;
 
 
 @Injectable({ providedIn: 'root' })

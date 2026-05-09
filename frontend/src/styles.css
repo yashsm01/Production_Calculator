@@ -13,8 +13,9 @@ html, body {
 
 /* ── Typography fixes ────────────────────────── */
 body {
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: 'Inter', Roboto, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Shared Utility Classes ──────────────────── */
@@ -34,11 +35,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
   border-bottom: 1px solid #e2e8f0;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.page-header h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.02em;
 }
 
 @media (max-width: 600px) {
@@ -106,9 +114,32 @@ body {
 
 /* ── Print Overrides ─────────────────────────── */
 @media print {
-  .app-toolbar {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  .app-container,
+  .mat-drawer-container,
+  .mat-drawer-content,
+  .mat-sidenav-container,
+  .mat-sidenav-content {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .app-toolbar,
+  .app-sidenav,
+  .mat-drawer,
+  .mat-sidenav {
     display: none !important;
   }
+  
   .page-container {
     padding: 0 !important;
     margin: 0 !important;

@@ -2,7 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { Category, Product, Parameter, ReportTemplate, ReportTemplateCell } from '../../models/interfaces';
+import { Category, Product, Parameter, ReportTemplate, ReportTemplateCell, MasterProduct, MasterRefDetail } from '../../models/interfaces';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,16 +36,26 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
   styleUrl: './report-builder.css',
 })
 export class ReportBuilder implements OnInit {
+  // ── Source selection ─────────────────────────────────────────────────────
+  sourceType: 'product' | 'master' = 'product';
+
+  // ── Product source ───────────────────────────────────────────────────────
   products: Product[] = [];
   selectedProductId = '';
   parameters: Parameter[] = [];
-  
+
+  // ── Master source ────────────────────────────────────────────────────────
+  masterProducts: MasterProduct[] = [];
+  selectedMasterId = '';
+  masterScope: Record<string, number> = {};
+  masterRefDetails: MasterRefDetail[] = [];
+  // Flat list of scope key items for the sidebar
+  masterScopeItems: { key: string; name: string; group: string; value: number }[] = [];
+
   templates: ReportTemplate[] = [];
   selectedTemplateId = '';
 
   template: ReportTemplate = {
-    productId: '',
-    templateName: '',
     rowCount: 10,
     colCount: 4,
     cells: [],
@@ -91,10 +101,31 @@ export class ReportBuilder implements OnInit {
   zoomOut() { this.zoomLevel = Math.max(0.3, +(this.zoomLevel - 0.1).toFixed(1)); }
   zoomReset() { this.zoomLevel = 1; }
 
+  // Sidebar search & filter
+  sidebarSearch = '';
+  sidebarGroupFilter = '';
+
   constructor(private api: ApiService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.api.getProducts().subscribe(prods => this.products = prods);
+    this.api.getMasterProducts().subscribe(ms => this.masterProducts = ms);
+  }
+
+  // ── Source type toggle ───────────────────────────────────────────────────
+  onSourceTypeChange(): void {
+    this.selectedProductId = '';
+    this.selectedMasterId = '';
+    this.parameters = [];
+    this.masterScopeItems = [];
+    this.masterScope = {};
+    this.templates = [];
+    this.selectedTemplateId = '';
+    this.selectedCells = [];
+    this.selectedCell = null;
+    this.sidebarSearch = '';
+    this.sidebarGroupFilter = '';
+    this.template = { rowCount: 10, colCount: 4, cells: [], colWidths: [], rowHeights: [] };
   }
 
   onProductChange() {
@@ -130,6 +161,127 @@ export class ReportBuilder implements OnInit {
     });
   }
 
+  // ── Master Product source ─────────────────────────────────────────────────
+  onMasterChange(): void {
+    if (!this.selectedMasterId) return;
+    this.loading = true;
+    this.masterScopeItems = [];
+    this.masterScope = {};
+    this.selectedCells = [];
+    this.selectedCell = null;
+    this.undoStack = [];
+
+    this.api.getMasterProductById(this.selectedMasterId).subscribe({
+      next: (res) => {
+        this.masterScope = res.scope || {};
+        this.masterRefDetails = res.refDetails || [];
+        this.masterScopeItems = this.buildMasterScopeItems(res);
+
+        this.api.getReportTemplatesByMaster(this.selectedMasterId).subscribe({
+          next: (tpls) => { this.templates = tpls; this.loading = false; },
+          error: () => { this.templates = []; this.loading = false; }
+        });
+      },
+      error: () => {
+        this.loading = false;
+        this.snackBar.open('Failed to load master product', 'Close', { duration: 3000 });
+      }
+    });
+  }
+
+  private buildMasterScopeItems(res: any): { key: string; name: string; group: string; value: number }[] {
+    const items: { key: string; name: string; group: string; value: number }[] = [];
+    const master: MasterProduct = res.master;
+
+    // Add scoped values from each referenced product
+    for (const detail of (res.refDetails || []) as MasterRefDetail[]) {
+      const prefix = detail.alias.toLowerCase().replace(/[^a-z0-9_]/g, '_') + '_';
+      for (const [key, value] of Object.entries(res.scope || {})) {
+        if (key.startsWith(prefix)) {
+          const originalKey = key.substring(prefix.length);
+          items.push({
+            key,
+            name: `${originalKey}`,
+            group: `${detail.alias} — ${detail.productName}`,
+            value: value as number
+          });
+        }
+      }
+    }
+
+    // Add master-level computed params
+    for (const param of (master.masterParams || [])) {
+      const k = param.key.toLowerCase();
+      items.push({
+        key: k,
+        name: param.name,
+        group: '★ Master Parameters',
+        value: res.scope[k] ?? 0
+      });
+    }
+
+    return items;
+  }
+
+  getMasterGroups(): string[] {
+    return [...new Set(this.masterScopeItems.map(i => i.group))];
+  }
+
+  getMasterItemsForGroup(group: string): { key: string; name: string; group: string; value: number }[] {
+    return this.masterScopeItems.filter(i => i.group === group);
+  }
+
+  // ── Sidebar search / filter helpers ─────────────────────────────────────────
+  onSidebarSearchChange(): void {
+    // triggers template re-render via getFiltered* methods
+  }
+
+  getFilteredMasterItems(): { key: string; name: string; group: string; value: number }[] {
+    const q = this.sidebarSearch.toLowerCase().trim();
+    const gf = this.sidebarGroupFilter;
+    return this.masterScopeItems.filter(i => {
+      const matchGroup = !gf || i.group === gf;
+      const matchSearch = !q || i.key.includes(q) || i.name.toLowerCase().includes(q);
+      return matchGroup && matchSearch;
+    });
+  }
+
+  getFilteredMasterGroups(): string[] {
+    return [...new Set(this.getFilteredMasterItems().map(i => i.group))];
+  }
+
+  getFilteredMasterItemsForGroup(group: string): { key: string; name: string; group: string; value: number }[] {
+    return this.getFilteredMasterItems().filter(i => i.group === group);
+  }
+
+  getFilteredGroupedParameters() {
+    const q = this.sidebarSearch.toLowerCase().trim();
+    if (!q) return this.getGroupedParameters();
+    return this.getGroupedParameters().map(g => ({
+      ...g,
+      parameters: g.parameters.filter(p =>
+        p.name.toLowerCase().includes(q) || p.key.toLowerCase().includes(q)
+      )
+    }));
+  }
+
+  /** Insert a key into the currently selected cell as a parameter type */
+  insertKeyToCell(key: string): void {
+    if (!this.selectedCell) {
+      this.snackBar.open('Click a cell first, then insert', 'Close', { duration: 2000 });
+      return;
+    }
+    this.cellEditType = 'parameter';
+    this.cellEditContent = key;
+    this.applyCellEdit();
+  }
+
+  formatNum(n: number): string {
+    if (n === undefined || n === null) return '—';
+    if (Number.isInteger(n)) return n.toLocaleString();
+    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }
+
   onTemplateChange() {
     if (!this.selectedTemplateId) return;
     this.loading = true;
@@ -155,7 +307,9 @@ export class ReportBuilder implements OnInit {
 
     this.loading = true;
     const newTemplate: Partial<ReportTemplate> = {
-      productId: this.selectedProductId,
+      productId: this.sourceType === 'product' ? this.selectedProductId : undefined,
+      masterProductId: this.sourceType === 'master' ? this.selectedMasterId : undefined,
+      sourceType: this.sourceType,
       templateName: name,
       rowCount: 10,
       colCount: 4,
@@ -556,7 +710,7 @@ export class ReportBuilder implements OnInit {
       next: () => {
         this.templates = this.templates.filter(t => t._id !== this.selectedTemplateId);
         this.selectedTemplateId = '';
-        this.template = { productId: this.selectedProductId, templateName: '', rowCount: 10, colCount: 4, cells: [], colWidths: [], rowHeights: [] };
+        this.template = { rowCount: 10, colCount: 4, cells: [], colWidths: [], rowHeights: [] };
         this.snackBar.open('Template deleted', 'Close', { duration: 3000 });
       },
       error: () => this.snackBar.open('Failed to delete', 'Close', { duration: 3000 })
@@ -669,6 +823,12 @@ export class ReportBuilder implements OnInit {
   }
 
   getParameterName(key: string): string {
+    // Master source: check scope items
+    if (this.sourceType === 'master') {
+      const item = this.masterScopeItems.find(x => x.key === key);
+      return item ? item.name : key;
+    }
+    // Product source
     const p = this.parameters.find(x => x.key === key);
     return p ? p.name : key;
   }

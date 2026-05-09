@@ -4,7 +4,18 @@ const ReportTemplate = require('../models/ReportTemplate');
 exports.getByProduct = async (req, res, next) => {
   try {
     const { productId } = req.params;
-    const templates = await ReportTemplate.find({ productId });
+    const templates = await ReportTemplate.find({ productId, sourceType: { $ne: 'master' } });
+    res.json(templates);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/report-template/master/:masterProductId
+exports.getByMaster = async (req, res, next) => {
+  try {
+    const { masterProductId } = req.params;
+    const templates = await ReportTemplate.find({ masterProductId, sourceType: 'master' });
     res.json(templates);
   } catch (err) {
     next(err);
@@ -28,9 +39,11 @@ exports.getById = async (req, res, next) => {
 // POST /api/report-template
 exports.create = async (req, res, next) => {
   try {
-    const { productId, templateName, description, rowCount, colCount, cells, colWidths, rowHeights } = req.body;
+    const { productId, masterProductId, sourceType, templateName, description, rowCount, colCount, cells, colWidths, rowHeights } = req.body;
     const template = new ReportTemplate({
-      productId,
+      productId: productId || null,
+      masterProductId: masterProductId || null,
+      sourceType: sourceType || 'product',
       templateName,
       description,
       rowCount,

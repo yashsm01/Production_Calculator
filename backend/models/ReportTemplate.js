@@ -50,10 +50,22 @@ const cellSchema = new mongoose.Schema({
 }, { _id: false });
 
 const reportTemplateSchema = new mongoose.Schema({
+  // One of these must be set depending on source type
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
-    required: true,
+    default: null,
+  },
+  masterProductId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'MasterProduct',
+    default: null,
+  },
+  // 'product' (default) | 'master'
+  sourceType: {
+    type: String,
+    enum: ['product', 'master'],
+    default: 'product',
   },
   templateName: {
     type: String,

@@ -3,6 +3,7 @@ const router = express.Router();
 const reportTemplateController = require('../controllers/reportTemplateController');
 
 router.get('/product/:productId', reportTemplateController.getByProduct);
+router.get('/master/:masterProductId', reportTemplateController.getByMaster);
 router.get('/:templateId', reportTemplateController.getById);
 router.post('/', reportTemplateController.create);
 router.put('/:templateId', reportTemplateController.update);

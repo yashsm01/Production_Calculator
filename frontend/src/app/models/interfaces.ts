@@ -63,7 +63,9 @@ export interface ReportTemplateCell {
 
 export interface ReportTemplate {
   _id?: string;
-  productId: string;
+  productId?: string;
+  masterProductId?: string;
+  sourceType?: 'product' | 'master';
   templateName?: string;
   description?: string;
   rowCount: number;
@@ -142,5 +144,6 @@ export interface MasterProductResult {
   master: MasterProduct;
   refDetails: MasterRefDetail[];
   scope: Record<string, number>;
+  inputKeys?: string[];
 }
 

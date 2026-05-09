@@ -115,6 +115,9 @@ export class ApiService {
   getReportTemplatesByProduct(productId: string): Observable<ReportTemplate[]> {
     return this.http.get<ReportTemplate[]>(`${BASE}/report-template/product/${productId}`);
   }
+  getReportTemplatesByMaster(masterProductId: string): Observable<ReportTemplate[]> {
+    return this.http.get<ReportTemplate[]>(`${BASE}/report-template/master/${masterProductId}`);
+  }
   getReportTemplate(templateId: string): Observable<ReportTemplate> {
     return this.http.get<ReportTemplate>(`${BASE}/report-template/${templateId}`);
   }
@@ -165,7 +168,7 @@ export class ApiService {
   deleteMasterProduct(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${BASE}/master-product/${id}`);
   }
-  previewMasterProduct(data: { productRefs: any[]; masterParams: any[] }): Observable<MasterProductResult> {
+  previewMasterProduct(data: { productRefs: any[]; masterParams: any[]; overrides?: Record<string, number> }): Observable<MasterProductResult> {
     return this.http.post<MasterProductResult>(`${BASE}/master-product/preview`, data);
   }
 }

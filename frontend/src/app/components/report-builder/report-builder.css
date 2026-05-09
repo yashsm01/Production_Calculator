@@ -19,6 +19,66 @@
   cursor: grabbing;
 }
 
+/* Upgraded scope item (replaces draggable-param in master mode) */
+.scope-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+  background: white;
+  margin-bottom: 4px;
+  cursor: grab;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.scope-item:hover {
+  border-color: #bae6fd;
+  background: #f0f9ff;
+  box-shadow: 0 1px 4px rgba(14,165,233,0.1);
+}
+
+.scope-item:active {
+  cursor: grabbing;
+}
+
+.scope-item-master {
+  border-color: #ede9fe;
+  background: #faf5ff;
+}
+
+.scope-item-master:hover {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  box-shadow: 0 1px 4px rgba(139,92,246,0.1);
+}
+
+/* Click-to-insert button */
+.insert-btn {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.insert-btn:hover {
+  background: #0ea5e9;
+  color: white;
+  border-color: #0ea5e9;
+}
+
+
 .report-grid {
   border-collapse: collapse;
   width: auto;

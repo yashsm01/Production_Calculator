@@ -298,7 +298,8 @@
   .custom-template-wrapper {
     width: 100%;
     max-width: 100%;
-    overflow: visible; /* Let it print naturally */
+    overflow: visible !important; /* Let it print naturally */
+    display: block !important;
   }
   
   .report-grid {
@@ -315,6 +316,10 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+  }
+
+  .report-grid tr {
+    page-break-inside: avoid !important;
   }
   
   .print-controls {

@@ -269,6 +269,7 @@
 
   <!-- ── MASTER REPORT VIEW ──────────────────────────────────────────────── -->
   @if (viewLoading) {
+
   <div style="padding: 40px; text-align: center; color: var(--text-muted);">
     <mat-icon style="animation: spin 1s linear infinite; font-size: 36px; width: 36px; height: 36px;">sync</mat-icon>
     <p>Loading master report...</p>
@@ -279,18 +280,37 @@
   <div id="master-report">
     <mat-card appearance="outlined" class="report-card">
       <mat-card-header style="padding-bottom: 0;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; flex-wrap: wrap; gap: 8px;">
           <div>
             <mat-card-title style="font-size: 1.4rem;">{{ viewingMaster.name }}</mat-card-title>
             @if (viewingMaster.description) {
             <mat-card-subtitle>{{ viewingMaster.description }}</mat-card-subtitle>
             }
           </div>
-          <button mat-icon-button (click)="closeView()" matTooltip="Close">
-            <mat-icon>close</mat-icon>
-          </button>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <!-- View mode toggle -->
+            <mat-button-toggle-group [(ngModel)]="activeViewMode" style="height: 36px;">
+              <mat-button-toggle value="table">
+                <mat-icon style="font-size: 18px; width:18px; height:18px;">table_rows</mat-icon>
+                <span style="margin-left: 4px; font-size: 0.85rem;">Data Table</span>
+              </mat-button-toggle>
+              <mat-button-toggle value="excel" [disabled]="viewTemplates.length === 0">
+                <mat-icon style="font-size: 18px; width:18px; height:18px;">grid_on</mat-icon>
+                <span style="margin-left: 4px; font-size: 0.85rem;">Excel Report</span>
+                @if (viewTemplates.length === 0) {
+                <span style="margin-left: 4px; font-size: 0.72rem; color: #94a3b8;">(no templates)</span>
+                }
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+            <button mat-icon-button (click)="closeView()" matTooltip="Close">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
         </div>
       </mat-card-header>
+
+      <!-- ── TAB: DATA TABLE ─────────────────────────────────────────── -->
+      @if (activeViewMode === 'table') {
       <mat-card-content style="padding-top: 16px;">
 
         <!-- Referenced Products values section -->
@@ -371,6 +391,142 @@
         }
 
       </mat-card-content>
+      }
+
+      <!-- ── TAB: EXCEL PREVIEW ──────────────────────────────────────── -->
+      @if (activeViewMode === 'excel') {
+      <mat-card-content style="padding: 0;">
+
+        <!-- Template selector + zoom controls toolbar -->
+        <div class="excel-toolbar">
+          <!-- Template tabs -->
+          @if (viewTemplates.length > 1) {
+          <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+            @for (tpl of viewTemplates; track tpl._id; let i = $index) {
+            <button
+              [class.excel-tab-active]="activeTemplateIdx === i"
+              class="excel-tab"
+              (click)="activeTemplateIdx = i"
+            >
+              <mat-icon style="font-size: 15px; width:15px; height:15px; margin-right: 4px;">grid_on</mat-icon>
+              {{ tpl.templateName || 'Template ' + (i + 1) }}
+            </button>
+            }
+          </div>
+          }
+          @if (viewTemplates.length === 1) {
+          <span style="font-weight: 600; color: #1e293b; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+            <mat-icon style="font-size: 18px; width:18px; height:18px; color: #10b981;">grid_on</mat-icon>
+            {{ viewTemplates[0].templateName || 'Template' }}
+          </span>
+          }
+
+          <span style="flex: 1;"></span>
+
+          <!-- Zoom controls -->
+          <div class="excel-zoom-controls">
+            <button mat-icon-button (click)="excelZoomOut()" [disabled]="excelZoom <= 0.4" matTooltip="Zoom Out">
+              <mat-icon>zoom_out</mat-icon>
+            </button>
+            <span class="zoom-label" (click)="excelZoomReset()" matTooltip="Reset Zoom">
+              {{ (excelZoom * 100).toFixed(0) }}%
+            </span>
+            <button mat-icon-button (click)="excelZoomIn()" [disabled]="excelZoom >= 2.5" matTooltip="Zoom In">
+              <mat-icon>zoom_in</mat-icon>
+            </button>
+          </div>
+
+          <button mat-stroked-button (click)="printExcel()" style="height: 36px; font-size: 0.85rem;">
+            <mat-icon>print</mat-icon> Print
+          </button>
+        </div>
+
+        <!-- Grid Canvas -->
+        @if (activeTemplate) {
+
+        <!-- Re-evaluating indicator -->
+        @if (reEvaluating) {
+        <div style="padding: 6px 16px; background: #fffbeb; border-bottom: 1px solid #fde68a; font-size: 0.82rem; color: #92400e; display: flex; align-items: center; gap: 6px;">
+          <mat-icon style="animation: spin 1s linear infinite; font-size: 16px; width:16px; height:16px;">sync</mat-icon>
+          Re-calculating master formulas...
+        </div>
+        }
+
+        <!-- Input keys legend -->
+        @if (inputKeys.length > 0) {
+        <div style="padding: 6px 16px; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; font-size: 0.8rem; color: #15803d; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <mat-icon style="font-size: 16px; width:16px; height:16px;">edit</mat-icon>
+          <span><strong>Green cells</strong> are raw input values — edit them to see formulas update live.</span>
+        </div>
+        }
+
+        <div class="excel-scroll-area">
+          <div [style.transform]="'scale(' + excelZoom + ')'" [style.transform-origin]="'top left'" style="display: inline-block; padding: 16px; min-width: max-content;">
+            <table class="excel-grid">
+              <colgroup>
+                @for (c of getColsArray(); track c) {
+                <col [style.width.px]="getColWidth(c)">
+                }
+              </colgroup>
+              <tbody>
+                @for (r of getRowsArray(); track r) {
+                <tr [style.height.px]="getRowHeight(r)">
+                  @for (c of getColsArray(); track c) {
+                  @if (!isCellHidden(r, c)) {
+                  <td
+                    [attr.colspan]="getCell(r, c)?.colSpan || 1"
+                    [attr.rowspan]="getCell(r, c)?.rowSpan || 1"
+                    [style.border]="getCell(r, c)?.thickBorder ? '3px solid #0f172a' : '1px solid #cbd5e1'"
+                    [style.background]="getCell(r, c)?.type === 'parameter' && isInputKey(getCell(r, c)!.content?.toLowerCase()) ? '#f0fdf4' : (getCell(r, c)?.bgColor || 'white')"
+                    [style.vertical-align]="'middle'"
+                    [class.excel-td-input]="getCell(r, c)?.type === 'parameter' && isInputKey(getCell(r, c)!.content?.toLowerCase())"
+                  >
+                    @if (getCell(r, c); as cell) {
+                    <div
+                      class="excel-cell-content"
+                      [style.font-weight]="cell.bold ? 'bold' : 'normal'"
+                      [style.text-align]="cell.align || 'left'"
+                      [style.color]="cell.fontColor || '#0f172a'"
+                    >
+                      @if (cell.type === 'parameter') {
+                        @if (isInputKey(cell.content?.toLowerCase())) {
+                        <!-- EDITABLE INPUT cell -->
+                        <input
+                          type="number"
+                          class="excel-input-cell"
+                          [value]="getEditableValue(cell.content?.toLowerCase())"
+                          (change)="onInputValueChange(cell.content?.toLowerCase(), $any($event.target).value)"
+                          (input)="onInputValueChange(cell.content?.toLowerCase(), $any($event.target).value)"
+                        >
+                        } @else {
+                        <!-- READ-ONLY computed/calculated value -->
+                        <span class="excel-param-value">{{ getCellValue(cell) }}</span>
+                        }
+                      } @else {
+                      {{ cell.content }}
+                      }
+                    </div>
+                    }
+                  </td>
+                  }
+                  }
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        } @else {
+
+        <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+          <mat-icon style="font-size: 48px; width:48px; height:48px; color: #cbd5e1;">grid_off</mat-icon>
+          <p style="margin-top: 12px;">No template selected.</p>
+        </div>
+        }
+
+      </mat-card-content>
+      }
+
     </mat-card>
   </div>
   }

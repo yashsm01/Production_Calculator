@@ -64,6 +64,7 @@ export class ProductComponent implements OnInit {
   catSearch = '';
   selectedCategoryId = '';
   productName = '';
+  editingProductId = '';
 
   // Dynamic inputs: variable name → value (number)
   inputVariables: string[] = [];
@@ -194,13 +195,18 @@ export class ProductComponent implements OnInit {
     this.submitting = true;
     this.lastResult = null;
 
+    const payload: any = {
+      name: this.productName,
+      categoryId: this.selectedCategoryId,
+      inputs: numericInputs,
+      hiddenParameters: Array.from(this.hiddenKeys)
+    };
+    if (this.editingProductId) {
+      payload._id = this.editingProductId;
+    }
+
     this.api
-      .createProduct({
-        name: this.productName,
-        categoryId: this.selectedCategoryId,
-        inputs: numericInputs,
-        hiddenParameters: Array.from(this.hiddenKeys)
-      })
+      .createProduct(payload)
       .subscribe({
         next: (result) => {
           this.lastResult = result;
@@ -267,8 +273,21 @@ export class ProductComponent implements OnInit {
   getGroupedInputs(): { header: string; parameters: Parameter[] }[] {
     const groups: Record<string, { headerObj: any; parameters: Parameter[] }> = {};
 
-    // Map input keys to their full parameter objects
-    const inputParams = this.categoryParameters.filter(p => this.inputVariables.includes(p.key));
+    // Map input keys to their full parameter objects. If a parameter doesn't exist (e.g. from a raw formula variable), create a mock one.
+    const inputParams: Parameter[] = this.inputVariables.map(key => {
+      const existing = this.categoryParameters.find(p => p.key === key);
+      if (existing) return existing;
+      
+      // Fallback for variables referenced in formulas but not defined as Parameters
+      return {
+        _id: 'mock_' + key,
+        key: key,
+        name: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        type: 'input',
+        formula: '',
+        index: 999 // put them at the end
+      } as Parameter;
+    });
 
     inputParams.forEach(p => {
       const headerObj = (p.headerInfoId as any);
@@ -362,6 +381,7 @@ export class ProductComponent implements OnInit {
   }
 
   editProduct(product: Product): void {
+    this.editingProductId = product._id;
     this.productName = product.name;
     this.selectedCategoryId = (product.categoryId as any)._id || product.categoryId;
     
@@ -400,6 +420,7 @@ export class ProductComponent implements OnInit {
   }
 
   resetForm(): void {
+    this.editingProductId = '';
     this.productName = '';
     this.selectedCategoryId = '';
     this.inputVariables = [];

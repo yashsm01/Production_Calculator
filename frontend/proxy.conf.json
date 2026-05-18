@@ -1,7 +1,7 @@
 {
   "/api": {
-    "target": "http://localhost:5000",
-    "secure": false,
+    "target": "http://13.234.110.205:5000",
+    "secure": true,
     "changeOrigin": true
   }
 }

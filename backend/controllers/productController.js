@@ -11,14 +11,22 @@ exports.create = async (req, res, next) => {
       return res.status(400).json({ message: 'name, categoryId, and inputs are required' });
     }
 
-    // Load ALL parameters globally (category is just for UI filtering)
-    const parameters = await Parameter.find({}).select('key formula name type');
+    // Load parameters specific to this category (plus global ones without a category)
+    const parameters = await Parameter.find({
+      $or: [
+        { categoryIds: { $in: [categoryId] } },
+        { categoryIds: { $size: 0 } },
+        { categoryIds: { $exists: false } }
+      ]
+    }).select('key formula name type');
 
     if (parameters.length === 0) {
       return res.status(400).json({
         message: 'No parameters found in the system. Please define parameters first.',
       });
     }
+
+    console.log('Parameters loaded for category:', categoryId, parameters.map(p => p.key));
 
     // Run formula engine — returns { scope, order }
     const { scope, order } = await runEngine(parameters, inputs);

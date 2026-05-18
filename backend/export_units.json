@@ -1,0 +1,58 @@
+[
+  {
+    "_id": "69e12ee1d6bc01cad9f0eb02",
+    "name": "Gram",
+    "symbol": "Gm",
+    "createdAt": "2026-04-16T18:48:01.836Z",
+    "updatedAt": "2026-04-16T18:48:01.836Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e12eedd6bc01cad9f0eb05",
+    "name": "Percentage",
+    "symbol": "%",
+    "createdAt": "2026-04-16T18:48:13.908Z",
+    "updatedAt": "2026-04-16T18:48:13.908Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e12efbd6bc01cad9f0eb08",
+    "name": "Indian Rupee",
+    "symbol": "₹",
+    "createdAt": "2026-04-16T18:48:27.108Z",
+    "updatedAt": "2026-04-16T18:48:27.108Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e14650cacbd9a7508e6a59",
+    "name": "Nos",
+    "symbol": "Nos",
+    "createdAt": "2026-04-16T20:28:00.316Z",
+    "updatedAt": "2026-04-16T20:28:00.316Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e14668cacbd9a7508e6a61",
+    "name": "Sec",
+    "symbol": "Sec",
+    "createdAt": "2026-04-16T20:28:24.312Z",
+    "updatedAt": "2026-04-16T20:28:24.312Z",
+    "__v": 0
+  },
+  {
+    "_id": "69e2839a90959d87097417d9",
+    "name": "YEARS",
+    "symbol": "yrs.",
+    "createdAt": "2026-04-17T19:01:46.805Z",
+    "updatedAt": "2026-04-17T19:01:46.805Z",
+    "__v": 0
+  },
+  {
+    "_id": "69eb8de75b937b67e9c8c9e8",
+    "name": "KG",
+    "symbol": "Kg",
+    "createdAt": "2026-04-24T15:36:07.261Z",
+    "updatedAt": "2026-04-24T15:36:07.261Z",
+    "__v": 0
+  }
+]

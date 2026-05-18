@@ -310,8 +310,8 @@ export class ProductReportComponent implements OnInit {
       next: (res) => {
         // The backend returns the recalculated product
         this.product = res.product;
-        // The standard report Groups need to be rebuilt in case they are shown
-        // But the custom template just reads directly from this.product, so it updates instantly!
+        // Rebuild the standard report groups to update calculated values in the Detailed Breakdown view
+        this.buildReport(this.product, this.parametersMetadata);
       },
       error: (err) => {
         this.snackBar.open('Error recalculating values.', 'Close', { duration: 3000 });

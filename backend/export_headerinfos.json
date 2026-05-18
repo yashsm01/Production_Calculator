@@ -1,0 +1,92 @@
+[
+  {
+    "_id": "69e26d6ffa6d333770d2e9ec",
+    "name": "Production Parameters",
+    "description": "Production Parameters",
+    "createdAt": "2026-04-17T17:27:11.955Z",
+    "updatedAt": "2026-04-25T03:49:12.329Z",
+    "__v": 0,
+    "index": 2
+  },
+  {
+    "_id": "69e26d83fa6d333770d2e9f7",
+    "name": "Material Consuption Calculation",
+    "description": "Material Consuption Calculation",
+    "createdAt": "2026-04-17T17:27:31.782Z",
+    "updatedAt": "2026-04-25T03:48:57.442Z",
+    "__v": 0,
+    "index": 1
+  },
+  {
+    "_id": "69e273ce8f51cab9a093b212",
+    "name": "Operating Cost Parameters",
+    "description": "Operating Cost Parameters",
+    "createdAt": "2026-04-17T17:54:22.138Z",
+    "updatedAt": "2026-04-25T03:49:47.808Z",
+    "__v": 0,
+    "index": 4
+  },
+  {
+    "_id": "69e27e77b3ce7b7406bfb96e",
+    "name": "Production Rate & Shift Output",
+    "description": "Production Rate & Shift Output",
+    "createdAt": "2026-04-17T18:39:51.331Z",
+    "updatedAt": "2026-04-25T03:50:14.926Z",
+    "__v": 0,
+    "index": 5
+  },
+  {
+    "_id": "69e282fb90959d87097417bb",
+    "name": "Amortization Calculator",
+    "description": "Amortization Calculator",
+    "createdAt": "2026-04-17T18:59:07.042Z",
+    "updatedAt": "2026-04-25T03:50:40.292Z",
+    "__v": 0,
+    "index": 6
+  },
+  {
+    "_id": "69ea47f208e969142f9c8d03",
+    "name": "Gamma Calculator",
+    "description": "Gamma Calculator",
+    "createdAt": "2026-04-23T16:25:22.718Z",
+    "updatedAt": "2026-04-25T03:50:46.019Z",
+    "__v": 0,
+    "index": 7
+  },
+  {
+    "_id": "69ea4bb408e969142f9c8d87",
+    "name": "Logistic ( Pack Size )",
+    "description": "Logistic ( Pack Size )",
+    "createdAt": "2026-04-23T16:41:24.379Z",
+    "updatedAt": "2026-04-25T03:51:00.490Z",
+    "__v": 0,
+    "index": 8
+  },
+  {
+    "_id": "69ea4e5408e969142f9c8df0",
+    "name": "Logistic ( Rate Per Pcs )",
+    "description": "Logistic ( Rate Per Pcs )",
+    "createdAt": "2026-04-23T16:52:36.131Z",
+    "updatedAt": "2026-04-25T03:51:17.485Z",
+    "__v": 0,
+    "index": 9
+  },
+  {
+    "_id": "69ea503308e969142f9c8e59",
+    "name": "5 ml Vial Set (Outputs)",
+    "description": "5 ml Vial Set (Outputs)",
+    "createdAt": "2026-04-23T17:00:35.191Z",
+    "updatedAt": "2026-04-25T03:51:37.397Z",
+    "__v": 0,
+    "index": 10
+  },
+  {
+    "_id": "69ea50d508e969142f9c8e66",
+    "name": "Material Cost Parameters",
+    "description": "Material Cost Parameters",
+    "createdAt": "2026-04-23T17:03:17.760Z",
+    "updatedAt": "2026-04-25T03:49:29.059Z",
+    "__v": 0,
+    "index": 3
+  }
+]

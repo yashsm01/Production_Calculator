@@ -47,7 +47,7 @@
           <mat-label>Product</mat-label>
           <mat-select [(ngModel)]="ref.productId" (ngModelChange)="previewDone = false">
             @for (p of allProducts; track p._id) {
-            <mat-option [value]="p._id">{{ p.name }} — {{ p.categoryId?.name }}</mat-option>
+            <mat-option [value]="p._id">{{ p.name }} — {{ p.categoryId.name || 'Uncategorized' }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -477,9 +477,9 @@
                     [attr.colspan]="getCell(r, c)?.colSpan || 1"
                     [attr.rowspan]="getCell(r, c)?.rowSpan || 1"
                     [style.border]="getCell(r, c)?.thickBorder ? '3px solid #0f172a' : '1px solid #cbd5e1'"
-                    [style.background]="getCell(r, c)?.type === 'parameter' && isInputKey(getCell(r, c)!.content?.toLowerCase()) ? '#f0fdf4' : (getCell(r, c)?.bgColor || 'white')"
+                    [style.background]="getCell(r, c)?.type === 'parameter' && isInputKey(getCell(r, c)!.content.toLowerCase()) ? '#f0fdf4' : (getCell(r, c)?.bgColor || 'white')"
                     [style.vertical-align]="'middle'"
-                    [class.excel-td-input]="getCell(r, c)?.type === 'parameter' && isInputKey(getCell(r, c)!.content?.toLowerCase())"
+                    [class.excel-td-input]="getCell(r, c)?.type === 'parameter' && isInputKey(getCell(r, c)!.content.toLowerCase())"
                   >
                     @if (getCell(r, c); as cell) {
                     <div
@@ -489,14 +489,14 @@
                       [style.color]="cell.fontColor || '#0f172a'"
                     >
                       @if (cell.type === 'parameter') {
-                        @if (isInputKey(cell.content?.toLowerCase())) {
+                        @if (isInputKey(cell.content.toLowerCase())) {
                         <!-- EDITABLE INPUT cell -->
                         <input
                           type="number"
                           class="excel-input-cell"
-                          [value]="getEditableValue(cell.content?.toLowerCase())"
-                          (change)="onInputValueChange(cell.content?.toLowerCase(), $any($event.target).value)"
-                          (input)="onInputValueChange(cell.content?.toLowerCase(), $any($event.target).value)"
+                          [value]="getEditableValue(cell.content.toLowerCase())"
+                          (change)="onInputValueChange(cell.content.toLowerCase(), $any($event.target).value)"
+                          (input)="onInputValueChange(cell.content.toLowerCase(), $any($event.target).value)"
                         >
                         } @else {
                         <!-- READ-ONLY computed/calculated value -->

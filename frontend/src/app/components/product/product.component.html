@@ -187,6 +187,9 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef style="text-align: right;"> Actions </th>
             <td mat-cell *matCellDef="let element" style="text-align: right; white-space: nowrap;">
+              <button mat-stroked-button (click)="editProduct(element)" style="margin-right: 8px; border-color: #10b981; color: #10b981;">
+                <mat-icon>edit</mat-icon> Edit
+              </button>
               <a mat-flat-button color="primary" [routerLink]="['/report', element._id]" [queryParams]="{view: 'custom'}" style="margin-right: 8px;">
                 <mat-icon>grid_on</mat-icon> Excel
               </a>

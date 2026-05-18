@@ -140,9 +140,22 @@
                             }
                           </td>
                           <td class="col-value">
-                            {{ formatNumber(item.value) }}
-                            @if (item.unit) {
-                              <span class="val-unit">{{ item.unit }}</span>
+                            @if (item.type === 'input') {
+                              <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                                <input type="number" 
+                                       class="grid-input"
+                                       style="text-align: right; max-width: 120px; font-size: 1.15rem; font-weight: 600;"
+                                       [(ngModel)]="product!.inputs[item.key]" 
+                                       (change)="recalculate()">
+                                @if (item.unit) {
+                                  <span class="val-unit">{{ item.unit }}</span>
+                                }
+                              </div>
+                            } @else {
+                              {{ formatNumber(item.value) }}
+                              @if (item.unit) {
+                                <span class="val-unit">{{ item.unit }}</span>
+                              }
                             }
                           </td>
                         </tr>
@@ -178,9 +191,22 @@
                         }
                       </td>
                       <td class="col-value">
-                        {{ formatNumber(item.value) }}
-                        @if (item.unit) {
-                          <span class="val-unit">{{ item.unit }}</span>
+                        @if (item.type === 'input') {
+                          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                            <input type="number" 
+                                   class="grid-input"
+                                   style="text-align: right; max-width: 120px; font-size: 1.15rem; font-weight: 600;"
+                                   [(ngModel)]="product!.inputs[item.key]" 
+                                   (change)="recalculate()">
+                            @if (item.unit) {
+                              <span class="val-unit">{{ item.unit }}</span>
+                            }
+                          </div>
+                        } @else {
+                          {{ formatNumber(item.value) }}
+                          @if (item.unit) {
+                            <span class="val-unit">{{ item.unit }}</span>
+                          }
                         }
                       </td>
                     </tr>

@@ -20,6 +20,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 import { ApiService } from '../../services/api.service';
 import { Product, MasterProduct, MasterParam, MasterProductRef, MasterRefDetail, ReportTemplate, ReportTemplateCell } from '../../models/interfaces';
+import { FormatDecimal } from '../../utils/decorators';
 
 @Component({
   selector: 'app-master-product',
@@ -343,10 +344,9 @@ export class MasterProductComponent implements OnInit {
     return Object.keys(this.viewScope).filter(k => !k.includes('_') || this.getMasterParamKeys().includes(k));
   }
 
+  @FormatDecimal(2)
   formatNum(n: number): string {
-    if (n === undefined || n === null) return '—';
-    if (Number.isInteger(n)) return n.toLocaleString();
-    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    return '';
   }
 
   getAliasColor(idx: number): string {

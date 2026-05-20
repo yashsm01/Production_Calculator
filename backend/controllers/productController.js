@@ -5,7 +5,7 @@ const { runEngine } = require('../services/formulaEngine');
 // POST /api/product/create
 exports.create = async (req, res, next) => {
   try {
-    const { name, categoryId, inputs, hiddenParameters, parameterLabels } = req.body;
+    const { name, categoryId, inputs, hiddenParameters, parameterLabels, parameterIndices } = req.body;
 
     if (!name || !categoryId || !inputs) {
       return res.status(400).json({ message: 'name, categoryId, and inputs are required' });
@@ -41,7 +41,14 @@ exports.create = async (req, res, next) => {
     // Upsert: Find by name. If exists, update it. If not, create it.
     const product = await Product.findOneAndUpdate(
       { name },
-      { categoryId, inputs, calculated, hiddenParameters: hiddenParameters || [], parameterLabels: parameterLabels || {} },
+      {
+        categoryId,
+        inputs,
+        calculated,
+        hiddenParameters: hiddenParameters || [],
+        parameterLabels: parameterLabels || {},
+        parameterIndices: parameterIndices || {},
+      },
       { new: true, upsert: true, runValidators: true }
     );
 

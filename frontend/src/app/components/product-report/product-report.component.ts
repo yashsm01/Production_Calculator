@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { Product, Parameter, ReportTemplate, ReportTemplateCell, ReportHistory } from '../../models/interfaces';
+import { FormatDecimal } from '../../utils/decorators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -163,13 +164,16 @@ export class ProductReportComponent implements OnInit {
         // Use custom label if defined, else fall back to parameter name
         const displayName = product.parameterLabels?.[key] || p?.name || this.formatKeyToName(key);
 
+        const customIdx = product.parameterIndices?.[key];
+        const idx = customIdx !== undefined ? customIdx : (p?.index || 0);
+
         groups[headerId].items.push({
           name: displayName,
           key: key,
           value: value,
           unit: (p?.unit as any)?.symbol || '',
           type: typeLabel,
-          index: p?.index || 0
+          index: idx
         });
       });
     };
@@ -206,10 +210,9 @@ export class ProductReportComponent implements OnInit {
     return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
+  @FormatDecimal(2)
   formatNumber(n: number): string {
-    if (n === undefined || n === null) return '—';
-    if (Number.isInteger(n)) return n.toLocaleString();
-    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    return '';
   }
 
   // Helper for custom template rendering
@@ -337,6 +340,39 @@ export class ProductReportComponent implements OnInit {
     
     const notes = prompt('Enter a label for this report snapshot (optional, e.g. "Rev A", "Client Quote"):') ?? '';
 
+    // Capture metadata snapshot for history hierarchy rendering
+    const paramMetadata: Record<string, any> = {};
+    const paramMap: Record<string, Parameter> = {};
+    this.parametersMetadata.forEach(p => paramMap[p.key] = p);
+
+    const processMetadata = (keys: string[]) => {
+      keys.forEach(key => {
+        const p = paramMap[key];
+        const label = this.getParameterLabel(key);
+        const unit = this.getParameterUnit(key);
+        
+        let headerInfo: any = null;
+        if (p?.headerInfoId) {
+          const h = p.headerInfoId as any;
+          headerInfo = {
+            name: h.name || '',
+            index: h.index !== undefined ? h.index : 999
+          };
+        }
+
+        paramMetadata[key] = {
+          name: p?.name || this.formatKeyToName(key),
+          label: label,
+          unit: unit,
+          index: p?.index !== undefined ? p.index : 999,
+          header: headerInfo
+        };
+      });
+    };
+
+    if (this.product.inputs) processMetadata(Object.keys(this.product.inputs));
+    if (this.product.calculated) processMetadata(Object.keys(this.product.calculated));
+
     const categoryName = (this.product.categoryId as any)?.name || '';
     const payload = {
       productId: this.product._id as string,
@@ -344,6 +380,9 @@ export class ProductReportComponent implements OnInit {
       categoryName,
       inputs: { ...this.product.inputs },
       calculated: { ...this.product.calculated },
+      parameterIndices: this.product.parameterIndices || {},
+      parameterMetadata: paramMetadata,
+      hiddenParameters: this.product.hiddenParameters || [],
       notes,
     };
 

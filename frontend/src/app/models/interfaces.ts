@@ -44,6 +44,7 @@ export interface Product {
   calculated: Record<string, number>;
   hiddenParameters?: string[];
   parameterLabels?: Record<string, string>;
+  parameterIndices?: Record<string, number>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -85,6 +86,9 @@ export interface ReportHistory {
   categoryName: string;
   inputs: Record<string, number>;
   calculated: Record<string, number>;
+  parameterIndices?: Record<string, number>;
+  parameterMetadata?: Record<string, any>;
+  hiddenParameters?: string[];
   notes: string;
   savedAt: string;
 }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { Category, Product, Parameter, ReportTemplate, ReportTemplateCell, MasterProduct, MasterRefDetail, Unit, HeaderInfo } from '../../models/interfaces';
+import { FormatDecimal } from '../../utils/decorators';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
@@ -322,10 +323,9 @@ export class ReportBuilder implements OnInit {
     this.applyCellEdit();
   }
 
+  @FormatDecimal(2)
   formatNum(n: number): string {
-    if (n === undefined || n === null) return '—';
-    if (Number.isInteger(n)) return n.toLocaleString();
-    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    return '';
   }
 
   onTemplateChange() {

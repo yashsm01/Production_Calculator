@@ -3,7 +3,7 @@ const ReportHistory = require('../models/ReportHistory');
 // POST /api/report-history — Save a new report snapshot
 exports.saveHistory = async (req, res) => {
   try {
-    const { productId, productName, categoryName, inputs, calculated, notes } = req.body;
+    const { productId, productName, categoryName, inputs, calculated, parameterIndices, parameterMetadata, hiddenParameters, notes } = req.body;
     if (!productId || !productName) {
       return res.status(400).json({ message: 'productId and productName are required.' });
     }
@@ -13,6 +13,9 @@ exports.saveHistory = async (req, res) => {
       categoryName: categoryName || '',
       inputs: inputs || {},
       calculated: calculated || {},
+      parameterIndices: parameterIndices || {},
+      parameterMetadata: parameterMetadata || {},
+      hiddenParameters: hiddenParameters || [],
       notes: notes || '',
     });
     await history.save();

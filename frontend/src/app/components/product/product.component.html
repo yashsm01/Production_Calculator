@@ -53,9 +53,10 @@
                   </mat-checkbox>
                   {{ group.header }}
                 </h4>
-                <div class="form-row">
+                <div class="form-row" cdkDropList (cdkDropListDropped)="onInputDrop($event, group.header)">
                   @for (p of group.parameters; track p.key) {
-                    <div class="param-row form-field-half">
+                    <div class="param-row form-field-half" cdkDrag>
+                      <mat-icon cdkDragHandle style="cursor: move; color: #94a3b8; margin-bottom: 22px; margin-right: 8px; font-size: 20px; width: 20px; height: 20px;" title="Drag to reorder">drag_indicator</mat-icon>
                       <mat-form-field appearance="outline" style="flex: 1;">
                         <mat-label>{{ p.name }} ({{ p.key }})</mat-label>
                         <input matInput type="number" [(ngModel)]="inputValues[p.key]">
@@ -160,14 +161,15 @@
                   <div class="result-col-divider"></div>
 
                   <!-- RIGHT: Formulas -->
-                  <div class="result-col result-col-formulas">
+                  <div class="result-col result-col-formulas" cdkDropList (cdkDropListDropped)="onFormulaDrop($event, group.header)">
                     <div class="result-col-label formula-label">
                       <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle;">functions</mat-icon>
                       Calculated
                     </div>
                     @for (item of group.formulas; track item.key) {
-                      <div class="result-row" [class.hidden-row]="isReportHidden(item.key)">
+                      <div class="result-row" [class.hidden-row]="isReportHidden(item.key)" cdkDrag>
                         <div class="result-row-left">
+                          <mat-icon cdkDragHandle style="cursor: move; color: #94a3b8; font-size: 18px; width: 18px; height: 18px; margin-right: 6px; align-self: center;" title="Drag to reorder">drag_indicator</mat-icon>
                           <mat-checkbox [checked]="!isReportHidden(item.key)" (change)="toggleReportHidden(item.key)"
                             color="primary" style="transform:scale(0.75); flex-shrink:0;" matTooltip="Show in report">
                           </mat-checkbox>

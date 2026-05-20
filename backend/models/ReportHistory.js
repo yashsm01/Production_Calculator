@@ -24,6 +24,18 @@ const ReportHistorySchema = new mongoose.Schema({
     of: Number,
     default: {},
   },
+  parameterIndices: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {},
+  },
+  parameterMetadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {},
+  },
+  hiddenParameters: {
+    type: [String],
+    default: [],
+  },
   notes: {
     type: String,
     default: '',

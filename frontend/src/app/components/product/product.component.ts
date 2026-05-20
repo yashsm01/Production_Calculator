@@ -4,6 +4,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
 import { Category, Product, EngineResult, Parameter, ReportHistory } from '../../models/interfaces';
+import { FormatDecimal } from '../../utils/decorators';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -17,6 +18,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDividerModule } from '@angular/material/divider';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 import { RouterModule } from '@angular/router';
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-product',
@@ -39,7 +41,8 @@ import { RouterModule } from '@angular/router';
     NgxMatSelectSearchModule,
     RouterModule,
     MatCheckboxModule,
-    DatePipe
+    DatePipe,
+    DragDropModule
   ],
   templateUrl: './product.component.html',
   styleUrl: './product.component.css',
@@ -72,6 +75,9 @@ export class ProductComponent implements OnInit {
 
   // Custom display labels for each parameter key (default = parameter name)
   parameterLabels: Record<string, string> = {};
+
+  // Custom parameter display order indices (key -> index)
+  parameterIndices: Record<string, number> = {};
 
   // Parameters for the selected category (for dependency visualization)
   categoryParameters: Parameter[] = [];
@@ -136,6 +142,7 @@ export class ProductComponent implements OnInit {
       this.inputVariables = [];
       this.inputValues = {};
       this.parameterLabels = {};
+      this.parameterIndices = {};
       this.categoryParameters = [];
       return;
     }
@@ -145,6 +152,7 @@ export class ProductComponent implements OnInit {
     this.lastResult = null;
     this.inputValues = {};
     this.parameterLabels = {};
+    this.parameterIndices = {};
     this.hiddenKeys.clear();
 
     this.api.getInputVariables(this.selectedCategoryId).subscribe({
@@ -154,6 +162,13 @@ export class ProductComponent implements OnInit {
         // Initialize all inputs to default 1 and labels to parameter name
         const init: Record<string, string> = {};
         const labels: Record<string, string> = {};
+        const indices: Record<string, number> = {};
+        
+        // Initialize indices for all parameters in the category
+        result.parameters.forEach(p => {
+          indices[p.key] = p.index !== undefined ? p.index : 999;
+        });
+
         for (const v of result.inputVariables) {
           init[v] = '1';
           const param = result.parameters.find(p => p.key === v);
@@ -161,6 +176,7 @@ export class ProductComponent implements OnInit {
         }
         this.inputValues = init;
         this.parameterLabels = labels;
+        this.parameterIndices = indices;
         this.loadingInputs = false;
       },
       error: (err) => {
@@ -209,7 +225,8 @@ export class ProductComponent implements OnInit {
       categoryId: this.selectedCategoryId,
       inputs: numericInputs,
       hiddenParameters: Array.from(this.hiddenKeys),
-      parameterLabels: { ...this.parameterLabels }
+      parameterLabels: { ...this.parameterLabels },
+      parameterIndices: { ...this.parameterIndices }
     };
     if (this.editingProductId) {
       payload._id = this.editingProductId;
@@ -272,7 +289,7 @@ export class ProductComponent implements OnInit {
         key,
         value,
         unit: (p?.unit as any)?.symbol || '',
-        index: p?.index ?? 999
+        index: this.parameterIndices[key] !== undefined ? this.parameterIndices[key] : (p?.index ?? 999)
       };
       if (type === 'input') groups[headerId].inputs.push(item);
       else groups[headerId].formulas.push(item);
@@ -334,8 +351,8 @@ export class ProductComponent implements OnInit {
     // Sort parameters within groups
     Object.values(groups).forEach(g => {
       g.parameters.sort((a, b) => {
-        const idxA = a.index || 0;
-        const idxB = b.index || 0;
+        const idxA = this.parameterIndices[a.key] !== undefined ? this.parameterIndices[a.key] : (a.index || 999);
+        const idxB = this.parameterIndices[b.key] !== undefined ? this.parameterIndices[b.key] : (b.index || 999);
         if (idxA !== idxB) return idxA - idxB;
         return a.name.localeCompare(b.name);
       });
@@ -362,10 +379,9 @@ export class ProductComponent implements OnInit {
     return Object.entries(inputs).map(([key, value]) => ({ key, value }));
   }
 
+  @FormatDecimal(2)
   formatNumber(n: number): string {
-    if (n === undefined || n === null) return '—';
-    if (Number.isInteger(n)) return n.toLocaleString();
-    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    return '';
   }
 
   isReportHidden(key: string): boolean {
@@ -453,8 +469,18 @@ export class ProductComponent implements OnInit {
             }
           });
         }
+        
+        // Populate custom parameter display order indices
+        const indices: Record<string, number> = { ...(product.parameterIndices || {}) };
+        result.parameters.forEach(p => {
+          if (indices[p.key] === undefined) {
+            indices[p.key] = p.index !== undefined ? p.index : 999;
+          }
+        });
+        
         this.inputValues = init;
         this.parameterLabels = labels;
+        this.parameterIndices = indices;
         this.loadingInputs = false;
         
         // Scroll to form smoothly
@@ -474,6 +500,7 @@ export class ProductComponent implements OnInit {
     this.inputVariables = [];
     this.inputValues = {};
     this.parameterLabels = {};
+    this.parameterIndices = {};
     this.categoryParameters = [];
     this.lastResult = null;
     this.error = '';
@@ -506,5 +533,41 @@ export class ProductComponent implements OnInit {
         this.snackBar.open('Snapshot deleted.', 'Close', { duration: 2000 });
       }
     });
+  }
+
+  onInputDrop(event: CdkDragDrop<any[]>, groupHeader: string): void {
+    const groupData = this.getGroupedInputs().find(g => g.header === groupHeader);
+    if (!groupData) return;
+
+    const parameters = [...groupData.parameters];
+    const prevIdx = event.previousIndex;
+    const currIdx = event.currentIndex;
+    const moved = parameters[prevIdx];
+    parameters.splice(prevIdx, 1);
+    parameters.splice(currIdx, 0, moved);
+
+    parameters.forEach((p, idx) => {
+      this.parameterIndices[p.key] = idx;
+    });
+
+    this.snackBar.open('✓ Reordered inputs. Run Calculator to save changes.', 'Close', { duration: 3000 });
+  }
+
+  onFormulaDrop(event: CdkDragDrop<any[]>, groupHeader: string): void {
+    const groupData = this.getGroupedCombined().find(g => g.header === groupHeader);
+    if (!groupData) return;
+
+    const formulas = [...groupData.formulas];
+    const prevIdx = event.previousIndex;
+    const currIdx = event.currentIndex;
+    const moved = formulas[prevIdx];
+    formulas.splice(prevIdx, 1);
+    formulas.splice(currIdx, 0, moved);
+
+    formulas.forEach((f, idx) => {
+      this.parameterIndices[f.key] = idx;
+    });
+
+    this.snackBar.open('✓ Reordered formulas. Run Calculator to save changes.', 'Close', { duration: 3000 });
   }
 }

@@ -55,7 +55,7 @@
                 </h4>
                 <div class="form-row">
                   @for (p of group.parameters; track p.key) {
-                    <div style="display: flex; align-items: center; gap: 8px;" class="form-field-half">
+                    <div class="param-row form-field-half">
                       <mat-form-field appearance="outline" style="flex: 1;">
                         <mat-label>{{ p.name }} ({{ p.key }})</mat-label>
                         <input matInput type="number" [(ngModel)]="inputValues[p.key]">
@@ -65,8 +65,13 @@
                           </span>
                         }
                       </mat-form-field>
+                      <!-- Compact report label pill -->
+                      <div class="label-pill">
+                        <span class="label-pill-badge">label</span>
+                        <input class="label-pill-input" [(ngModel)]="parameterLabels[p.key]" [placeholder]="p.name" title="Report display label">
+                      </div>
                       <mat-checkbox [checked]="!isReportHidden(p.key)" (change)="toggleReportHidden(p.key)" 
-                        color="primary" matTooltip="Show in Report" style="margin-bottom: 22px;">
+                        color="primary" matTooltip="Show in Report" style="margin-bottom: 22px; flex-shrink:0;">
                       </mat-checkbox>
                     </div>
                   }
@@ -95,53 +100,107 @@
 
     <!-- RIGHT PANEL: Result -->
     @if (lastResult) {
-      <div class="form-field-half" style="flex: 1 1 350px; min-width: 300px;">
-        <mat-card appearance="outlined" style="background:#f0fdff; border-color:#00B4D8;">
-          <mat-card-header>
-            <mat-card-title>Engine Result</mat-card-title>
+      <div class="form-field-half" style="flex: 1 1 500px; min-width: 320px;">
+        <mat-card appearance="outlined" style="border-color:#bae6fd;">
+          <mat-card-header style="padding-bottom:0;">
+            <mat-card-title style="font-size:1rem;">Engine Result — {{ lastResult.product.name }}</mat-card-title>
           </mat-card-header>
-          <mat-card-content style="padding-top:16px;">
-            <p><strong>Config:</strong> {{ lastResult.product.name }}</p>
-            <mat-divider style="margin: 16px 0;"></mat-divider>
-            
-            @for (group of getGroupedResults(); track group.header) {
-              <div style="margin-bottom: 20px;">
-                <h4 style="margin: 0 0 8px 0; color: #0077b6; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(0,180,216,0.2); padding-bottom: 4px; display: flex; align-items: center;">
-                  <mat-checkbox [checked]="isHeaderFullyVisible(group.parameters)" 
-                    [indeterminate]="isHeaderPartiallyVisible(group.parameters)"
-                    (change)="toggleHeaderVisibility(group.parameters)"
-                    color="primary" style="margin-right: 8px; transform: scale(0.8);">
+          <mat-card-content style="padding-top:12px;">
+
+            @for (group of getGroupedCombined(); track group.header) {
+              <div class="result-group">
+
+                <!-- Group header -->
+                <div class="result-group-header">
+                  <mat-checkbox
+                    [checked]="isHeaderFullyVisible([...group.inputs, ...group.formulas])"
+                    [indeterminate]="isHeaderPartiallyVisible([...group.inputs, ...group.formulas])"
+                    (change)="toggleHeaderVisibility([...group.inputs, ...group.formulas])"
+                    color="primary" style="transform:scale(0.8);">
                   </mat-checkbox>
-                  {{ group.header }}
-                </h4>
-                <div class="table-responsive">
-                  <table style="width:100%; border-collapse: collapse;">
-                    @for (param of group.parameters; track param.key) {
-                      <tr style="border-bottom: 1px solid rgba(0,0,0,0.03);">
-                        <td style="padding: 6px 0;">
-                          <div style="display: flex; align-items: center; gap: 8px;">
-                            <mat-checkbox [checked]="!isReportHidden(param.key)" (change)="toggleReportHidden(param.key)" 
-                              color="primary" matTooltip="Show in Report" style="transform: scale(0.85);"></mat-checkbox>
-                            <div>
-                              <div style="font-weight:500; font-size:0.9rem;">{{ param.name }}</div>
-                              <div style="font-size:0.7rem; color:var(--text-muted); font-family:monospace;">{{ param.key }}</div>
+                  <span>{{ group.header }}</span>
+                </div>
+
+                <!-- Two-column body -->
+                <div class="result-group-body">
+
+                  <!-- LEFT: Inputs -->
+                  <div class="result-col result-col-inputs">
+                    <div class="result-col-label">
+                      <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle;">input</mat-icon>
+                      Inputs
+                    </div>
+                    @for (item of group.inputs; track item.key) {
+                      <div class="result-row" [class.hidden-row]="isReportHidden(item.key)">
+                        <div class="result-row-left">
+                          <mat-checkbox [checked]="!isReportHidden(item.key)" (change)="toggleReportHidden(item.key)"
+                            color="primary" style="transform:scale(0.75); flex-shrink:0;" matTooltip="Show in report">
+                          </mat-checkbox>
+                          <div class="result-name-block">
+                            <div class="result-name">{{ item.name }}</div>
+                            <div class="result-key">{{ item.key }}</div>
+                            <div class="label-pill label-pill-sm">
+                              <span class="label-pill-badge">label</span>
+                              <input class="label-pill-input" [(ngModel)]="parameterLabels[item.key]" [placeholder]="item.name">
                             </div>
                           </div>
-                        </td>
-                        <td style="padding: 6px 0; text-align:right; font-family:monospace; font-size:1.05rem; color:var(--primary); font-weight: 500;">
-                          {{ formatNumber(param.value) }} <span style="font-size:0.85rem; color:var(--text-muted); font-weight:400; margin-left:4px;">{{ param.unit }}</span>
-                        </td>
-                      </tr>
+                        </div>
+                        <div class="result-value input-value">
+                          {{ formatNumber(item.value) }}
+                          @if (item.unit) { <span class="result-unit">{{ item.unit }}</span> }
+                        </div>
+                      </div>
                     }
-                  </table>
+                    @if (group.inputs.length === 0) {
+                      <div style="color:#94a3b8; font-size:0.78rem; padding:8px 4px; font-style:italic;">No inputs</div>
+                    }
+                  </div>
+
+                  <!-- Divider -->
+                  <div class="result-col-divider"></div>
+
+                  <!-- RIGHT: Formulas -->
+                  <div class="result-col result-col-formulas">
+                    <div class="result-col-label formula-label">
+                      <mat-icon style="font-size:13px;width:13px;height:13px;vertical-align:middle;">functions</mat-icon>
+                      Calculated
+                    </div>
+                    @for (item of group.formulas; track item.key) {
+                      <div class="result-row" [class.hidden-row]="isReportHidden(item.key)">
+                        <div class="result-row-left">
+                          <mat-checkbox [checked]="!isReportHidden(item.key)" (change)="toggleReportHidden(item.key)"
+                            color="primary" style="transform:scale(0.75); flex-shrink:0;" matTooltip="Show in report">
+                          </mat-checkbox>
+                          <div class="result-name-block">
+                            <div class="result-name">{{ item.name }}</div>
+                            <div class="result-key">{{ item.key }}</div>
+                            <div class="label-pill label-pill-sm">
+                              <span class="label-pill-badge">label</span>
+                              <input class="label-pill-input" [(ngModel)]="parameterLabels[item.key]" [placeholder]="item.name">
+                            </div>
+                          </div>
+                        </div>
+                        <div class="result-value formula-value">
+                          {{ formatNumber(item.value) }}
+                          @if (item.unit) { <span class="result-unit">{{ item.unit }}</span> }
+                        </div>
+                      </div>
+                    }
+                    @if (group.formulas.length === 0) {
+                      <div style="color:#94a3b8; font-size:0.78rem; padding:8px 4px; font-style:italic;">No formulas</div>
+                    }
+                  </div>
+
                 </div>
               </div>
             }
+
           </mat-card-content>
         </mat-card>
       </div>
     }
   </div>
+
 
   <mat-divider style="margin: 40px 0;"></mat-divider>
 

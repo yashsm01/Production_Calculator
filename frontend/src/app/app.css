@@ -1,64 +1,84 @@
-/* app.css */
+/* ═══════════════════════════════════════════════════════════
+   APP SHELL  —  Toolbar, Sidenav, Navigation
+   ═══════════════════════════════════════════════════════════ */
+
 .app-container {
   height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
+/* ── Toolbar ─────────────────────────────────────────────── */
 .app-toolbar {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  background: #ffffff !important;
+  border-bottom: 2px solid #e0f2fe;
+  box-shadow: 0 2px 12px rgba(15,23,42,0.07) !important;
   z-index: 1000;
   flex-shrink: 0;
   height: 64px;
   padding: 0 24px;
+  color: #0f172a !important;
 }
 
+/* ── Toolbar Brand ───────────────────────────────────────── */
 .toolbar-brand {
   display: flex;
   align-items: center;
   cursor: pointer;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   text-decoration: none;
   color: #0f172a;
   letter-spacing: -0.02em;
+  gap: 10px;
 }
 
-.toolbar-brand mat-icon {
-  color: #0ea5e9;
-  margin-right: 10px !important;
+.toolbar-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 6px;
+  background: transparent;
+  padding: 2px;
+  border: none;
 }
 
+.toolbar-brand span {
+  display: none;
+}
+
+/* ── Desktop Nav ─────────────────────────────────────────── */
 .desktop-nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .desktop-nav a.mat-mdc-button {
   color: #475569 !important;
   font-weight: 500;
-  border-radius: 6px;
-  padding: 0 12px;
+  font-size: 0.85rem;
+  border-radius: 8px !important;
+  padding: 0 12px !important;
   letter-spacing: 0.01em;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
+  height: 40px;
 }
 
 .desktop-nav a.mat-mdc-button:hover {
-  background-color: #f1f5f9 !important;
-  color: #0f172a !important;
+  background-color: #f0f9ff !important;
+  color: #0369a1 !important;
 }
 
 .desktop-nav a.mat-mdc-button mat-icon {
-  margin-right: 6px;
+  margin-right: 5px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
   color: #94a3b8;
-  transition: color 0.2s ease;
+  transition: color 0.18s ease;
 }
 
 .desktop-nav a.mat-mdc-button:hover mat-icon {
@@ -66,64 +86,63 @@
 }
 
 .desktop-nav .active-link {
-  background-color: #f0f9ff !important;
-  color: #0284c7 !important;
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  font-weight: 600 !important;
 }
 
 .desktop-nav .active-link mat-icon {
   color: #0ea5e9 !important;
 }
 
-.builder-btn {
-  background-color: transparent !important;
+/* Logout icon button */
+.desktop-nav button.mat-mdc-icon-button {
+  color: #94a3b8 !important;
 }
 
-.builder-link {
-  background-color: rgba(0, 0, 0, 0.03) !important;
+.desktop-nav button.mat-mdc-icon-button:hover {
+  color: #ef4444 !important;
+  background: #fef2f2 !important;
 }
 
+.builder-btn, .builder-link {
+  background: #f5f3ff !important;
+  color: #7c3aed !important;
+}
+
+.builder-btn:hover, .builder-link:hover {
+  background: #ede9fe !important;
+  color: #6d28d9 !important;
+}
+
+/* ── Hamburger Menu Button ───────────────────────────────── */
 .menu-button {
   display: none;
   margin-right: 8px;
-  color: #475569;
+  color: #475569 !important;
 }
 
-.app-sidenav {
-  width: 280px;
+/* ── Sidenav (Moved to global styles.css for View Encapsulation compatibility in overlays) ── */
+
+/* ── Main Content Area ───────────────────────────────────── */
+.page-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.sidenav-header {
-  padding: 24px;
-  background-color: #0f172a;
-  color: white;
-  display: flex;
-  align-items: center;
-  font-weight: 500;
-  font-size: 1.25rem;
+@media (max-width: 768px) {
+  .page-container { padding: 1rem; }
 }
 
-.sidenav-header mat-icon {
-  color: #0ea5e9;
-}
-
-.mat-nav-list .active-link {
-  background-color: #f0f9ff !important;
-  color: #0284c7 !important;
-}
-
-.mat-nav-list .active-link mat-icon {
-  color: #0ea5e9 !important;
-}
-
+/* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 1100px) {
-  .desktop-nav {
-    display: none;
-  }
-  .menu-button {
-    display: block;
-  }
+  .desktop-nav { display: none; }
+  .menu-button { display: block; }
 }
 
-.spacer {
-  flex: 1 1 auto;
+@media (max-width: 600px) {
+  .app-toolbar { padding: 0 12px; }
 }
+
+.spacer { flex: 1 1 auto; }

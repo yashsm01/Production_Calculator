@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject, switchMap } from 'rxjs';
@@ -17,6 +17,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatChipsModule } from '@angular/material/chips';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 
 @Component({
@@ -39,6 +41,8 @@ import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
     MatRadioModule,
     MatTooltipModule,
     MatMenuModule,
+    MatDividerModule,
+    MatChipsModule,
     NgxMatSelectSearchModule
   ],
   templateUrl: './parameter.component.html',
@@ -54,6 +58,7 @@ export class ParameterComponent implements OnInit {
   @ViewChild(MatSort) set matSort(ms: MatSort) {
     this.dataSource.sort = ms;
   }
+  @ViewChild('formulaInputEl') formulaInputEl!: ElementRef<HTMLInputElement>;
 
   categories: Category[] = [];
   units: Unit[] = [];
@@ -107,6 +112,13 @@ export class ParameterComponent implements OnInit {
   extractedVars: string[] = [];
   validatingFormula = false;
   menuSearchVar = '';
+
+  // Visual parameter picker
+  showParamPicker = false;
+  pickerSearch = '';
+  usedInFormula: Set<string> = new Set();
+
+  readonly OPERATORS = ['+', '-', '*', '/', '^', '(', ')', ' '];
 
   private formulaInput$ = new Subject<string>();
 
@@ -235,10 +247,70 @@ export class ParameterComponent implements OnInit {
   onFormulaChange(value: string): void {
     if (value.trim().length > 0) {
       this.formulaInput$.next(value.trim());
+      // Highlight which params are used
+      this.usedInFormula = new Set(
+        this.getAvailableParametersForFormula()
+          .filter(p => value.toLowerCase().includes(p.key.toLowerCase()))
+          .map(p => p.key)
+      );
     } else {
       this.formulaValid = null;
       this.extractedVars = [];
+      this.usedInFormula = new Set();
     }
+  }
+
+  insertOperator(op: string): void {
+    const el = this.formulaInputEl?.nativeElement;
+    if (!el) {
+      this.form.formula = (this.form.formula || '') + op;
+      this.onFormulaChange(this.form.formula);
+      return;
+    }
+    const start = el.selectionStart ?? this.form.formula.length;
+    const end = el.selectionEnd ?? start;
+    const current = this.form.formula || '';
+    this.form.formula = current.substring(0, start) + op + current.substring(end);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + op.length, start + op.length);
+    }, 0);
+    this.onFormulaChange(this.form.formula);
+  }
+
+  insertVariableFromPicker(key: string): void {
+    const el = this.formulaInputEl?.nativeElement;
+    if (el) {
+      this.insertVariable(key, el);
+    } else {
+      this.form.formula = (this.form.formula || '').trimEnd() + ' ' + key + ' ';
+      this.onFormulaChange(this.form.formula);
+    }
+  }
+
+  getPickerParams(): Parameter[] {
+    const list = this.getAvailableParametersForFormula();
+    if (!this.pickerSearch.trim()) return list;
+    const s = this.pickerSearch.toLowerCase();
+    return list.filter(p => p.key.includes(s) || p.name.toLowerCase().includes(s));
+  }
+
+  getPickerGroups(): { header: string; params: Parameter[] }[] {
+    const params = this.getPickerParams();
+    const groups: Record<string, { header: string; params: Parameter[] }> = {};
+    params.forEach(p => {
+      const h = (p.headerInfoId as any)?.name || 'General';
+      if (!groups[h]) groups[h] = { header: h, params: [] };
+      groups[h].params.push(p);
+    });
+    return Object.values(groups).sort((a, b) => a.header.localeCompare(b.header));
+  }
+
+  clearFormula(): void {
+    this.form.formula = '';
+    this.formulaValid = null;
+    this.extractedVars = [];
+    this.usedInFormula = new Set();
   }
 
   getAvailableParametersForFormula(): Parameter[] {

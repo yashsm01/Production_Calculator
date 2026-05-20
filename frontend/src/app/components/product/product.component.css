@@ -1,1 +1,207 @@
-/* scoped styles */
+/* ── Parameter row layout ─────────────────────────────────── */
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Report Label Pill ────────────────────────────────────── */
+.label-pill {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 0 10px 0 8px;
+  height: 36px;
+  gap: 5px;
+  flex: 1;
+  min-width: 110px;
+  max-width: 220px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.label-pill:focus-within {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.12);
+  background: #fff;
+}
+
+.label-pill-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  white-space: nowrap;
+  user-select: none;
+  background: #e2e8f0;
+  border-radius: 10px;
+  padding: 2px 6px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.label-pill:focus-within .label-pill-badge {
+  background: #bae6fd;
+  color: #0369a1;
+}
+
+.label-pill-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.8rem;
+  color: #334155;
+  width: 100%;
+  font-family: 'Inter', Roboto, sans-serif;
+  min-width: 0;
+}
+
+.label-pill-input::placeholder {
+  color: #cbd5e1;
+  font-style: italic;
+}
+
+/* Smaller variant used in result panel */
+.label-pill.label-pill-sm {
+  height: 28px;
+  padding: 0 8px 0 6px;
+  max-width: 100%;
+  min-width: 80px;
+  border-radius: 14px;
+}
+
+.label-pill.label-pill-sm .label-pill-badge {
+  font-size: 0.55rem;
+  padding: 1px 5px;
+}
+
+.label-pill.label-pill-sm .label-pill-input {
+  font-size: 0.75rem;
+}
+
+/* ── Result table rows (old, kept for safety) ────────────────── */
+.result-param-row {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.1s;
+}
+.result-param-row:hover { background: #f8fafc; }
+.result-param-row:last-child { border-bottom: none; }
+
+/* ── Result Group ─────────────────────────────────────────────── */
+.result-group {
+  margin-bottom: 12px;
+  border: 1px solid #e0f2fe;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.result-group-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: linear-gradient(90deg, #e0f2fe, #f0f9ff);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0369a1;
+  border-bottom: 1px solid #bae6fd;
+}
+
+/* ── Two-column body ──────────────────────────────────────────── */
+.result-group-body {
+  display: flex;
+  align-items: stretch;
+  min-height: 40px;
+}
+
+.result-col {
+  flex: 1;
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.result-col-inputs  { background: #fafcff; }
+.result-col-formulas { background: #f0fdfa; }
+
+.result-col-divider {
+  width: 1px;
+  background: #bae6fd;
+  flex-shrink: 0;
+}
+
+.result-col-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.result-col-label.formula-label { color: #0f766e; }
+
+/* ── Result rows ──────────────────────────────────────────────── */
+.result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f1f5f9;
+  transition: opacity 0.15s;
+}
+.result-row:last-child { border-bottom: none; }
+.result-row.hidden-row { opacity: 0.38; }
+
+.result-row-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.result-name-block { flex: 1; min-width: 0; }
+
+.result-name {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-key {
+  font-size: 0.62rem;
+  color: #94a3b8;
+  font-family: monospace;
+  margin-bottom: 2px;
+}
+
+.result-value {
+  font-family: monospace;
+  font-size: 0.92rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.result-value.input-value  { color: #475569; }
+.result-value.formula-value { color: #0369a1; }
+
+.result-unit {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 400;
+  margin-left: 2px;
+}
+

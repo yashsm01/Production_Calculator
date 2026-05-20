@@ -25,6 +25,11 @@ const productSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Custom display labels for each parameter key (used in reports)
+    parameterLabels: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
   { timestamps: true }
 );

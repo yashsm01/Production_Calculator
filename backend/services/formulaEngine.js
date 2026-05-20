@@ -56,13 +56,12 @@ async function runEngine(parameters, inputs) {
   const formulaParams = parameters.filter((p) => p.type !== 'input' && p.formula && p.formula.trim() !== '');
   const sortedParams = topologicalSort(formulaParams);
 
-  // ── Step 2: Check for missing inputs ───────────────────────────────────────
+  // ── Step 2: Set default values (1) for missing required inputs ───────────────
   const requiredInputs = collectAllInputVariables(parameters);
-  const missingInputs = requiredInputs.filter(
-    (v) => inputs[v] === undefined || inputs[v] === null || inputs[v] === ''
-  );
-  if (missingInputs.length > 0) {
-    throw new Error(`Missing required input values: ${missingInputs.join(', ')}`);
+  for (const v of requiredInputs) {
+    if (inputs[v] === undefined || inputs[v] === null || inputs[v] === '') {
+      inputs[v] = 1;
+    }
   }
 
   // ── Step 3: Build scope with validated numeric inputs ──────────────────────

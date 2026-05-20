@@ -70,6 +70,9 @@ export class ProductComponent implements OnInit {
   inputVariables: string[] = [];
   inputValues: Record<string, string> = {};
 
+  // Custom display labels for each parameter key (default = parameter name)
+  parameterLabels: Record<string, string> = {};
+
   // Parameters for the selected category (for dependency visualization)
   categoryParameters: Parameter[] = [];
   
@@ -132,6 +135,7 @@ export class ProductComponent implements OnInit {
     if (!this.selectedCategoryId) {
       this.inputVariables = [];
       this.inputValues = {};
+      this.parameterLabels = {};
       this.categoryParameters = [];
       return;
     }
@@ -140,18 +144,23 @@ export class ProductComponent implements OnInit {
     this.error = '';
     this.lastResult = null;
     this.inputValues = {};
+    this.parameterLabels = {};
     this.hiddenKeys.clear();
 
     this.api.getInputVariables(this.selectedCategoryId).subscribe({
       next: (result) => {
         this.inputVariables = result.inputVariables;
         this.categoryParameters = result.parameters;
-        // Initialize all inputs to empty
+        // Initialize all inputs to default 1 and labels to parameter name
         const init: Record<string, string> = {};
+        const labels: Record<string, string> = {};
         for (const v of result.inputVariables) {
-          init[v] = '';
+          init[v] = '1';
+          const param = result.parameters.find(p => p.key === v);
+          labels[v] = param?.name || this.getInputLabel(v);
         }
         this.inputValues = init;
+        this.parameterLabels = labels;
         this.loadingInputs = false;
       },
       error: (err) => {
@@ -199,7 +208,8 @@ export class ProductComponent implements OnInit {
       name: this.productName,
       categoryId: this.selectedCategoryId,
       inputs: numericInputs,
-      hiddenParameters: Array.from(this.hiddenKeys)
+      hiddenParameters: Array.from(this.hiddenKeys),
+      parameterLabels: { ...this.parameterLabels }
     };
     if (this.editingProductId) {
       payload._id = this.editingProductId;
@@ -210,6 +220,8 @@ export class ProductComponent implements OnInit {
       .subscribe({
         next: (result) => {
           this.lastResult = result;
+          // Also initialise labels for any formula outputs not yet labelled
+          this.initOutputLabels(result);
           this.snackBar.open(`✓ "${result.product.name}" calculated successfully!`, 'Close', { duration: 5000 });
           this.submitting = false;
           this.loadProducts();
@@ -221,53 +233,73 @@ export class ProductComponent implements OnInit {
       });
   }
 
-  getGroupedResults(): { header: string; parameters: { name: string; key: string; value: number; unit: string }[] }[] {
-    if (!this.lastResult || !this.lastResult.product.calculated) return [];
+  /** After engine run, ensure every calculated output also has a label entry */
+  initOutputLabels(result: EngineResult): void {
+    const paramMap: Record<string, Parameter> = {};
+    this.categoryParameters.forEach(p => paramMap[p.key] = p);
+    const calculated = result.product.calculated || {};
+    Object.keys(calculated).forEach(key => {
+      if (!this.parameterLabels[key]) {
+        const param = paramMap[key];
+        this.parameterLabels[key] = param?.name || this.getInputLabel(key);
+      }
+    });
+  }
 
-    const calculated = this.lastResult.product.calculated;
-    const groups: Record<string, { headerObj: any; parameters: { name: string; key: string; value: number; unit: string; index: number }[] }> = {};
+  /** Combined result grouped by HeaderInfo: inputs on left, formulas on right */
+  getGroupedCombined(): {
+    header: string;
+    headerObj: any;
+    inputs: { name: string; key: string; value: number; unit: string; index: number }[];
+    formulas: { name: string; key: string; value: number; unit: string; index: number }[];
+  }[] {
+    if (!this.lastResult) return [];
 
-    // Use categoryParameters or create a map for lookup
+    const product = this.lastResult.product;
     const paramMap: Record<string, Parameter> = {};
     this.categoryParameters.forEach(p => paramMap[p.key] = p);
 
-    Object.entries(calculated).forEach(([key, value]) => {
+    type ParamItem = { name: string; key: string; value: number; unit: string; index: number };
+    const groups: Record<string, { headerObj: any; inputs: ParamItem[]; formulas: ParamItem[] }> = {};
+
+    const addToGroup = (key: string, value: number, type: 'input' | 'formula') => {
       const p = paramMap[key];
       const headerObj = (p?.headerInfoId as any);
       const headerId = headerObj?._id || 'other';
-
-      if (!groups[headerId]) {
-        groups[headerId] = { headerObj, parameters: [] };
-      }
-      
-      groups[headerId].parameters.push({
-        name: p?.name || key,
-        key: key,
-        value: value,
+      if (!groups[headerId]) groups[headerId] = { headerObj, inputs: [], formulas: [] };
+      const item: ParamItem = {
+        name: p?.name || this.getInputLabel(key),
+        key,
+        value,
         unit: (p?.unit as any)?.symbol || '',
-        index: p?.index || 0
-      });
-    });
+        index: p?.index ?? 999
+      };
+      if (type === 'input') groups[headerId].inputs.push(item);
+      else groups[headerId].formulas.push(item);
+    };
 
-    // Sort parameters within groups
-    Object.values(groups).forEach(g => {
-      g.parameters.sort((a, b) => {
-        if (a.index !== b.index) return a.index - b.index;
-        return a.name.localeCompare(b.name);
-      });
-    });
+    // Add inputs
+    Object.entries(product.inputs || {}).forEach(([k, v]) => addToGroup(k, v, 'input'));
+    // Add formula outputs
+    Object.entries(product.calculated || {}).forEach(([k, v]) => addToGroup(k, v, 'formula'));
 
-    // Sort groups
-    const sortedGroups = Object.values(groups).sort((a, b) => {
-      const idxA = a.headerObj?.index || 0;
-      const idxB = b.headerObj?.index || 0;
-      if (idxA !== idxB) return idxA - idxB;
-      const nameA = a.headerObj?.name || 'Other Calculations';
-      const nameB = b.headerObj?.name || 'Other Calculations';
-      return nameA.localeCompare(nameB);
-    });
+    // Sort items within each group by index
+    const sort = (arr: ParamItem[]) => arr.sort((a, b) => a.index !== b.index ? a.index - b.index : a.name.localeCompare(b.name));
+    Object.values(groups).forEach(g => { sort(g.inputs); sort(g.formulas); });
 
-    return sortedGroups.map(g => ({ header: g.headerObj?.name || 'Other Calculations', parameters: g.parameters }));
+    // Sort groups by header index
+    return Object.values(groups)
+      .sort((a, b) => {
+        const iA = a.headerObj?.index ?? 999, iB = b.headerObj?.index ?? 999;
+        if (iA !== iB) return iA - iB;
+        return (a.headerObj?.name || '').localeCompare(b.headerObj?.name || '');
+      })
+      .map(g => ({
+        header: g.headerObj?.name || 'Other',
+        headerObj: g.headerObj,
+        inputs: g.inputs,
+        formulas: g.formulas
+      }));
   }
 
   getGroupedInputs(): { header: string; parameters: Parameter[] }[] {
@@ -397,16 +429,32 @@ export class ProductComponent implements OnInit {
         this.inputVariables = result.inputVariables;
         this.categoryParameters = result.parameters;
         
-        // Populate inputs with existing product data or empty string
+        // Populate inputs with existing product data or default to 1
         const init: Record<string, string> = {};
+        const labels: Record<string, string> = { ...(product.parameterLabels || {}) };
         for (const v of result.inputVariables) {
-          if (product.inputs && product.inputs[v] !== undefined) {
+          if (product.inputs && product.inputs[v] !== undefined && product.inputs[v] !== null) {
             init[v] = product.inputs[v].toString();
           } else {
-            init[v] = '';
+            init[v] = '1';
+          }
+          // Set label default if not already saved
+          if (!labels[v]) {
+            const param = result.parameters.find(p => p.key === v);
+            labels[v] = param?.name || this.getInputLabel(v);
           }
         }
+        // Also populate labels for calculated outputs
+        if (product.calculated) {
+          Object.keys(product.calculated).forEach(key => {
+            if (!labels[key]) {
+              const param = result.parameters.find(p => p.key === key);
+              labels[key] = param?.name || this.getInputLabel(key);
+            }
+          });
+        }
         this.inputValues = init;
+        this.parameterLabels = labels;
         this.loadingInputs = false;
         
         // Scroll to form smoothly
@@ -425,6 +473,7 @@ export class ProductComponent implements OnInit {
     this.selectedCategoryId = '';
     this.inputVariables = [];
     this.inputValues = {};
+    this.parameterLabels = {};
     this.categoryParameters = [];
     this.lastResult = null;
     this.error = '';

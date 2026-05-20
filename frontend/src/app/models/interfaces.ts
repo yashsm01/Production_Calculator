@@ -43,6 +43,7 @@ export interface Product {
   inputs: Record<string, number>;
   calculated: Record<string, number>;
   hiddenParameters?: string[];
+  parameterLabels?: Record<string, string>;
   createdAt?: string;
   updatedAt?: string;
 }

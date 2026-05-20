@@ -1,24 +1,62 @@
-/* ── Global Layout Resets ──────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL STYLES  —  Sunplast Calculator
+   Color palette: slate-blue primary, warm off-white backgrounds,
+   subtle depth through layered grays, crisp accent blues.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+  /* Brand */
+  --primary:        #0369a1;   /* sky-700  */
+  --primary-light:  #0ea5e9;   /* sky-500  */
+  --primary-subtle: #e0f2fe;   /* sky-100  */
+
+  /* Surfaces */
+  --bg-base:        #f0f4f8;   /* warm off-white — NOT pure white */
+  --bg-surface:     #ffffff;
+  --bg-raised:      #f8fafc;   /* slightly elevated surface */
+  --bg-sunken:      #e8eef5;   /* input backgrounds, sidebar */
+
+  /* Borders */
+  --border:         #d1dbe8;
+  --border-light:   #e8eef5;
+
+  /* Text */
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #94a3b8;
+
+  /* Accents */
+  --accent-green:   #059669;
+  --accent-purple:  #7c3aed;
+  --accent-amber:   #d97706;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(15,23,42,0.06);
+  --shadow-sm: 0 2px 8px rgba(15,23,42,0.08);
+  --shadow-md: 0 4px 16px rgba(15,23,42,0.10);
+}
+
+/* ── Base Reset ─────────────────────────────────────────────── */
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #f8fafc;
+  background-color: var(--bg-base);
   box-sizing: border-box;
+  scroll-behavior: smooth;
 }
 
-*, *::before, *::after {
-  box-sizing: inherit;
-}
+*, *::before, *::after { box-sizing: inherit; }
 
-/* ── Typography fixes ────────────────────────── */
 body {
   font-family: 'Inter', Roboto, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color: var(--text-primary);
 }
 
-/* ── Shared Utility Classes ──────────────────── */
+/* ── Layout Utilities ───────────────────────────────────────── */
 .page-container {
   padding: 2rem;
   max-width: 1400px;
@@ -26,39 +64,56 @@ body {
 }
 
 @media (max-width: 768px) {
-  .page-container {
-    padding: 1rem;
-  }
+  .page-container { padding: 1rem; }
 }
 
+.page-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Page Header ─────────────────────────────────────────────── */
 .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
   padding-bottom: 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 2px solid var(--border-light);
   flex-wrap: wrap;
   gap: 16px;
 }
 
 .page-header h1 {
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #0f172a;
-  letter-spacing: -0.02em;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.page-header h1::after {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-light), var(--primary));
+  border-radius: 2px;
+  margin-top: 6px;
 }
 
 @media (max-width: 600px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .page-header h1 {
-    margin-bottom: 0;
-  }
+  .page-header { flex-direction: column; align-items: flex-start; }
 }
 
+/* ── Subtitle ────────────────────────────────────────────────── */
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* ── Form Layout ─────────────────────────────────────────────── */
 .form-row {
   display: flex;
   flex-wrap: wrap;
@@ -72,9 +127,7 @@ body {
 }
 
 @media (max-width: 600px) {
-  .form-field-half {
-    flex: 1 1 100%;
-  }
+  .form-field-half { flex: 1 1 100%; }
 }
 
 .form-field-full {
@@ -82,37 +135,195 @@ body {
   width: 100%;
 }
 
-.spacer {
-  flex: 1 1 auto;
+.spacer { flex: 1 1 auto; }
+
+/* ── Material Card Overrides ─────────────────────────────────── */
+mat-card, .mat-mdc-card {
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--border-light) !important;
+  background: var(--bg-surface) !important;
+  transition: box-shadow 0.2s ease;
 }
 
-/* ── Material Overrides ──────────────────────── */
+mat-card:hover, .mat-mdc-card:hover {
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* ── Material Table Overrides ────────────────────────────────── */
 .mat-mdc-table {
-  background: white;
-  border-radius: 8px;
+  background: var(--bg-surface) !important;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
 }
 
+.mat-mdc-header-row {
+  background: var(--bg-raised) !important;
+}
+
+.mat-mdc-header-cell {
+  font-weight: 700 !important;
+  font-size: 0.78rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary) !important;
+  border-bottom: 2px solid var(--border) !important;
+}
+
+.mat-mdc-row {
+  border-bottom: 1px solid var(--border-light) !important;
+  transition: background 0.12s ease;
+}
+
+.mat-mdc-row:hover {
+  background: var(--bg-raised) !important;
+}
+
+.mat-mdc-row:last-child {
+  border-bottom: none !important;
+}
+
+/* ── Material Form Field Overrides ───────────────────────────── */
+.mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.mat-mdc-text-field-wrapper {
+  background-color: var(--bg-raised) !important;
+  border-radius: 8px !important;
+}
+
+.mat-mdc-outlined-field .mdc-notched-outline__leading,
+.mat-mdc-outlined-field .mdc-notched-outline__notch,
+.mat-mdc-outlined-field .mdc-notched-outline__trailing {
+  border-color: var(--border) !important;
+}
+
+/* ── Material Toolbar Overrides ──────────────────────────────── */
+.mat-mdc-paginator {
+  background: var(--bg-raised) !important;
+  border-top: 1px solid var(--border-light);
+  border-radius: 0 0 10px 10px;
+}
+
+/* ── Table Responsive ───────────────────────────────────────── */
 .table-responsive {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-.mat-mdc-header-cell {
+/* ── Status Badges ───────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.badge-blue   { background: #dbeafe; color: #1d4ed8; }
+.badge-green  { background: #d1fae5; color: #065f46; }
+.badge-purple { background: #ede9fe; color: #5b21b6; }
+.badge-amber  { background: #fef3c7; color: #92400e; }
+
+/* ── Section Divider ─────────────────────────────────────────── */
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border-light);
+  margin: 2rem 0;
+}
+
+/* ── Spin animation ──────────────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Sidenav / Drawer Overrides ──────────────────────────────── */
+.app-sidenav {
+  width: 280px !important;
+  background-color: var(--bg-surface) !important;
+  border-right: 1px solid var(--border-light) !important;
+}
+
+.sidenav-header {
+  padding: 20px 24px;
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-light) !important;
+}
+
+.sidenav-logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 6px;
+  background: transparent;
+  padding: 3px 5px;
+  border: 1px solid var(--border-light);
+}
+
+/* Sidenav nav items styling with MDC compatibility */
+.app-sidenav .mat-mdc-list-item {
+  color: var(--text-secondary) !important;
+  border-radius: 8px !important;
+  margin: 4px 12px !important;
+  transition: all 0.15s ease !important;
+  height: 48px !important;
+}
+
+.app-sidenav .mat-mdc-list-item .mdc-list-item__primary-text {
+  color: inherit !important;
+  font-weight: 500 !important;
+}
+
+.app-sidenav .mat-mdc-list-item:hover {
+  background-color: var(--bg-base) !important;
+  color: var(--text-primary) !important;
+}
+
+.app-sidenav .mat-mdc-list-item mat-icon {
+  color: var(--text-muted) !important;
+  transition: color 0.15s ease !important;
+}
+
+.app-sidenav .mat-mdc-list-item:hover mat-icon {
+  color: var(--primary) !important;
+}
+
+/* Sidenav active item styling */
+.app-sidenav .mat-nav-list .active-link {
+  background-color: var(--primary-subtle) !important;
+  color: var(--primary) !important;
+}
+
+.app-sidenav .mat-nav-list .active-link .mdc-list-item__primary-text {
   font-weight: 600 !important;
-  color: rgba(0,0,0,0.87) !important;
 }
 
-/* ── Custom Utilities ────────────────────────── */
-.subtitle {
-  color: #64748b;
-  font-size: 0.875rem;
-  margin-top: 0.25rem;
+.app-sidenav .mat-nav-list .active-link mat-icon {
+  color: var(--primary) !important;
 }
 
-/* ── Print Overrides ─────────────────────────── */
+/* Logout button specific styling */
+.app-sidenav button.mat-mdc-list-item:hover {
+  background-color: #fef2f2 !important;
+  color: #ef4444 !important;
+}
+
+.app-sidenav button.mat-mdc-list-item:hover mat-icon {
+  color: #ef4444 !important;
+}
+
+/* ── Print Overrides ─────────────────────────────────────────── */
 @media print {
   html, body {
     height: auto !important;
@@ -133,13 +344,10 @@ body {
     background: white !important;
   }
 
-  .app-toolbar,
-  .app-sidenav,
-  .mat-drawer,
-  .mat-sidenav {
+  .app-toolbar, .app-sidenav, .mat-drawer, .mat-sidenav {
     display: none !important;
   }
-  
+
   .page-container {
     padding: 0 !important;
     margin: 0 !important;

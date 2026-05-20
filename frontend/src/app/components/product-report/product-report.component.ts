@@ -160,8 +160,11 @@ export class ProductReportComponent implements OnInit {
           groups[headerId] = { headerObj, items: [] };
         }
 
+        // Use custom label if defined, else fall back to parameter name
+        const displayName = product.parameterLabels?.[key] || p?.name || this.formatKeyToName(key);
+
         groups[headerId].items.push({
-          name: p?.name || this.formatKeyToName(key),
+          name: displayName,
           key: key,
           value: value,
           unit: (p?.unit as any)?.symbol || '',
@@ -282,6 +285,15 @@ export class ProductReportComponent implements OnInit {
     return val;
   }
 
+  /** Returns the custom label for a key, or falls back to parameter name */
+  getParameterLabel(key: string): string {
+    if (this.product?.parameterLabels?.[key]) {
+      return this.product.parameterLabels[key];
+    }
+    const p = this.parametersMetadata.find(x => x.key === key);
+    return p?.name || this.formatKeyToName(key);
+  }
+
   isInputParameter(key: string): boolean {
     if (!this.product || !this.product.inputs) return false;
     return this.product.inputs.hasOwnProperty(key);
@@ -303,7 +315,8 @@ export class ProductReportComponent implements OnInit {
       name: this.product.name,
       categoryId: (this.product.categoryId as any)._id || this.product.categoryId,
       inputs: this.product.inputs,
-      hiddenParameters: this.product.hiddenParameters || []
+      hiddenParameters: this.product.hiddenParameters || [],
+      parameterLabels: this.product.parameterLabels || {}
     };
 
     this.api.createProduct(payload).subscribe({

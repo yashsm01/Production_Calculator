@@ -2,7 +2,7 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../services/api.service';
-import { Category, Product, Parameter, ReportTemplate, ReportTemplateCell, MasterProduct, MasterRefDetail } from '../../models/interfaces';
+import { Category, Product, Parameter, ReportTemplate, ReportTemplateCell, MasterProduct, MasterRefDetail, Unit, HeaderInfo } from '../../models/interfaces';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,6 +14,10 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { MatChipsModule } from '@angular/material/chips';
+import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-report-builder',
@@ -30,7 +34,9 @@ import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-
     MatDividerModule,
     MatButtonToggleModule,
     DragDropModule,
-    MatDialogModule
+    MatDialogModule,
+    MatChipsModule,
+    NgxMatSelectSearchModule
   ],
   templateUrl: './report-builder.html',
   styleUrl: './report-builder.css',
@@ -105,11 +111,51 @@ export class ReportBuilder implements OnInit {
   sidebarSearch = '';
   sidebarGroupFilter = '';
 
-  constructor(private api: ApiService, private snackBar: MatSnackBar) {}
+  // Meta lists for creation dialog
+  categories: Category[] = [];
+  units: Unit[] = [];
+  headerInfos: HeaderInfo[] = [];
+
+  // Filtered lists for searchable selects in the dialog
+  filteredCategories: Category[] = [];
+  filteredUnits: Unit[] = [];
+  filteredHeaderInfos: HeaderInfo[] = [];
+
+  catSearch = '';
+  unitSearch = '';
+  headerSearch = '';
+
+  // dialog parameter creation form state
+  dialogParamForm = {
+    name: '',
+    key: '',
+    type: 'formula' as 'input' | 'formula',
+    formula: '',
+    unitId: '',
+    headerInfoId: '',
+    categoryIds: [] as string[],
+    index: null as number | null
+  };
+
+  savingDialogParam = false;
+  dialogFormulaValid: boolean | null = null;
+  dialogFormulaError = '';
+  dialogExtractedVars: string[] = [];
+  dialogValidatingFormula = false;
+
+  private dialogFormulaInput$ = new Subject<string>();
+
+  constructor(
+    private api: ApiService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
     this.api.getProducts().subscribe(prods => this.products = prods);
     this.api.getMasterProducts().subscribe(ms => this.masterProducts = ms);
+    this.loadMetaForDialog();
+    this.setupDialogFormulaValidation();
   }
 
   // ── Source type toggle ───────────────────────────────────────────────────
@@ -891,5 +937,218 @@ export class ReportBuilder implements OnInit {
       console.error('Fallback copy failed', err);
     }
     document.body.removeChild(textArea);
+  }
+
+  // ── Dialog Parameter Creation & Validation Logic ─────────────────────────
+  loadMetaForDialog(): void {
+    this.api.getCategories().subscribe((cats) => { this.categories = cats; this.filterCategories(); });
+    this.api.getUnits().subscribe((units) => { this.units = units; this.filterUnits(); });
+    this.api.getHeaderInfos().subscribe((infos) => { this.headerInfos = infos; this.filterHeaderInfos(); });
+  }
+
+  filterCategories(): void {
+    if (!this.catSearch) { this.filteredCategories = [...this.categories]; return; }
+    const s = this.catSearch.toLowerCase();
+    this.filteredCategories = this.categories.filter(c => c.name.toLowerCase().includes(s));
+  }
+
+  filterUnits(): void {
+    if (!this.unitSearch) { this.filteredUnits = [...this.units]; return; }
+    const s = this.unitSearch.toLowerCase();
+    this.filteredUnits = this.units.filter(u => u.name.toLowerCase().includes(s) || u.symbol.toLowerCase().includes(s));
+  }
+
+  filterHeaderInfos(): void {
+    if (!this.headerSearch) { this.filteredHeaderInfos = [...this.headerInfos]; return; }
+    const s = this.headerSearch.toLowerCase();
+    this.filteredHeaderInfos = this.headerInfos.filter(h => h.name.toLowerCase().includes(s));
+  }
+
+  setupDialogFormulaValidation(): void {
+    this.dialogFormulaInput$
+      .pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        switchMap((formula) => {
+          this.dialogValidatingFormula = true;
+          this.dialogFormulaValid = null;
+          this.dialogExtractedVars = [];
+          return this.api.validateFormula(formula);
+        })
+      )
+      .subscribe({
+        next: (result) => {
+          this.dialogFormulaValid = result.valid;
+          this.dialogFormulaError = result.error || '';
+          this.dialogExtractedVars = result.variables || [];
+          this.dialogValidatingFormula = false;
+        },
+        error: (err) => {
+          this.dialogFormulaValid = false;
+          this.dialogFormulaError = err.error?.error || 'Validation failed';
+          this.dialogValidatingFormula = false;
+        },
+      });
+  }
+
+  onDialogFormulaChange(value: string): void {
+    if (value.trim().length > 0) {
+      this.dialogFormulaInput$.next(value.trim());
+    } else {
+      this.dialogFormulaValid = null;
+      this.dialogExtractedVars = [];
+    }
+  }
+
+  getSelectedParamKeys(): string[] {
+    if (!this.selectedCells || this.selectedCells.length === 0) return [];
+    const keys: string[] = [];
+    this.selectedCells.forEach(sc => {
+      const cell = this.getCell(sc.row, sc.col);
+      if (cell && cell.type === 'parameter' && cell.content) {
+        if (!keys.includes(cell.content)) {
+          keys.push(cell.content);
+        }
+      }
+    });
+    return keys;
+  }
+
+  openParamCreateDialog(template: any): void {
+    const selectedKeys = this.getSelectedParamKeys();
+    
+    // Determine category based on currently selected product
+    let initialCatIds: string[] = [];
+    if (this.sourceType === 'product' && this.selectedProductId) {
+      const product = this.products.find(p => p._id === this.selectedProductId);
+      if (product) {
+        const catId = (product.categoryId as any)._id || (product.categoryId as unknown as string);
+        if (catId) {
+          initialCatIds = [catId];
+        }
+      }
+    }
+
+    // Pre-populate parameter form
+    this.dialogParamForm = {
+      name: '',
+      key: '',
+      type: 'formula',
+      formula: selectedKeys.join(' + '),
+      unitId: '',
+      headerInfoId: '',
+      categoryIds: initialCatIds,
+      index: null
+    };
+
+    this.dialogFormulaValid = null;
+    this.dialogFormulaError = '';
+    this.dialogExtractedVars = [];
+    
+    // Open Dialog
+    this.dialog.open(template, {
+      width: '650px',
+      disableClose: true
+    });
+
+    if (this.dialogParamForm.formula) {
+      this.onDialogFormulaChange(this.dialogParamForm.formula);
+    }
+  }
+
+  insertKeyInDialogFormula(key: string, inputElement?: HTMLInputElement): void {
+    const insertStr = ` ${key} `;
+    if (!inputElement) {
+      this.dialogParamForm.formula = (this.dialogParamForm.formula || '').trimEnd() + insertStr;
+      this.onDialogFormulaChange(this.dialogParamForm.formula);
+      return;
+    }
+    const start = inputElement.selectionStart || 0;
+    const end = inputElement.selectionEnd || 0;
+    const current = this.dialogParamForm.formula || '';
+    
+    this.dialogParamForm.formula = current.substring(0, start) + insertStr + current.substring(end);
+    
+    setTimeout(() => {
+      inputElement.focus();
+      inputElement.setSelectionRange(start + insertStr.length, start + insertStr.length);
+    }, 0);
+    
+    this.onDialogFormulaChange(this.dialogParamForm.formula);
+  }
+
+  insertOperatorInDialogFormula(op: string, inputElement?: HTMLInputElement): void {
+    if (!inputElement) {
+      this.dialogParamForm.formula = (this.dialogParamForm.formula || '') + op;
+      this.onDialogFormulaChange(this.dialogParamForm.formula);
+      return;
+    }
+    const start = inputElement.selectionStart ?? this.dialogParamForm.formula.length;
+    const end = inputElement.selectionEnd ?? start;
+    const current = this.dialogParamForm.formula || '';
+    this.dialogParamForm.formula = current.substring(0, start) + op + current.substring(end);
+    
+    setTimeout(() => {
+      inputElement.focus();
+      inputElement.setSelectionRange(start + op.length, start + op.length);
+    }, 0);
+    
+    this.onDialogFormulaChange(this.dialogParamForm.formula);
+  }
+
+  saveDialogParameter(): void {
+    if (!this.dialogParamForm.name.trim() || !this.dialogParamForm.key.trim()) {
+      this.snackBar.open('Name and Key are required', 'Close', { duration: 3000 });
+      return;
+    }
+    if (this.dialogParamForm.type === 'formula') {
+      if (!this.dialogParamForm.formula.trim()) {
+        this.snackBar.open('Formula is required', 'Close', { duration: 3000 });
+        return;
+      }
+      if (this.dialogFormulaValid === false) {
+        this.snackBar.open('Please fix the formula error before saving', 'Close', { duration: 3000 });
+        return;
+      }
+    }
+
+    this.savingDialogParam = true;
+
+    const payload: any = {
+      name: this.dialogParamForm.name,
+      key: this.dialogParamForm.key,
+      type: this.dialogParamForm.type,
+      formula: this.dialogParamForm.formula,
+      unit: this.dialogParamForm.unitId || null,
+      headerInfoId: this.dialogParamForm.headerInfoId || null,
+      categoryIds: this.dialogParamForm.categoryIds,
+      index: this.dialogParamForm.index
+    };
+
+    this.api.createParameter(payload).subscribe({
+      next: (newParam) => {
+        this.savingDialogParam = false;
+        this.snackBar.open('Parameter created successfully!', 'Close', { duration: 3000 });
+        this.dialog.closeAll();
+        
+        // Refresh product parameters list so sidebar has the new parameter
+        if (this.selectedProductId) {
+          this.onProductChange();
+        } else if (this.selectedMasterId) {
+          this.onMasterChange();
+        }
+
+        // Auto-assign the newly created parameter to the primary selected cell
+        if (this.selectedCell) {
+          this.cellEditType = 'parameter';
+          this.cellEditContent = newParam.key;
+          this.applyCellEdit();
+        }
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Failed to create parameter', 'Close', { duration: 3000 });
+        this.savingDialogParam = false;
+      }
+    });
   }
 }

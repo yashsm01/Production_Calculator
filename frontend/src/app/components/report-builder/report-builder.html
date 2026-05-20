@@ -354,6 +354,14 @@
 
           <button mat-icon-button color="warn" (click)="clearCell()"
             matTooltip="Clear cell"><mat-icon>clear</mat-icon></button>
+
+          @if (getSelectedParamKeys().length > 0) {
+          <div style="border-left: 1px solid #cbd5e1; height: 32px; margin: 0 4px;"></div>
+          <button mat-flat-button class="create-param-selection-btn" (click)="openParamCreateDialog(paramDialog)"
+            matTooltip="Create formula parameter from selected cell parameters">
+            <mat-icon style="margin-right: 4px;">auto_awesome</mat-icon> Create Formula Param
+          </button>
+          }
         </div>
         } @else {
         <div
@@ -437,4 +445,148 @@
 
   </div>
   }
+
+  <!-- Dialog for creating parameter from spreadsheet selection -->
+  <ng-template #paramDialog>
+    <div style="padding: 16px 24px; display: flex; flex-direction: column; max-height: 90vh; overflow-y: auto;">
+      <h2 mat-dialog-title style="display:flex; align-items:center; gap:8px; margin: 0 0 16px 0; font-size:1.35rem; font-weight:500; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+        <mat-icon style="color: #6366f1;">auto_awesome</mat-icon>
+        Create Parameter from Selection
+      </h2>
+      
+      <mat-dialog-content class="mat-typography" style="display:flex; flex-direction:column; gap:16px; margin: 0; padding: 0;">
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 250px; margin-bottom: -0.5em;">
+            <mat-label>Parameter Name</mat-label>
+            <input matInput [(ngModel)]="dialogParamForm.name" placeholder="e.g. Total Area" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 250px; margin-bottom: -0.5em;">
+            <mat-label>Key (Variable Name)</mat-label>
+            <input matInput [(ngModel)]="dialogParamForm.key" placeholder="e.g. total_area" required>
+            <mat-hint>Used in formulas. Typically lowercase, no spaces.</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <div style="display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 8px;">
+          <mat-form-field appearance="outline" style="width: 200px; margin-bottom: -0.5em;">
+            <mat-label>Index (Priority)</mat-label>
+            <input matInput type="number" [(ngModel)]="dialogParamForm.index" placeholder="e.g. 1">
+            <mat-hint>Lower numbers evaluate first.</mat-hint>
+          </mat-form-field>
+          <span style="font-size: 0.8rem; color: #64748b; font-style: italic;">
+            Auto-scopes to active product category.
+          </span>
+        </div>
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;">
+          <!-- Unit Selector -->
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 150px; margin-bottom: -0.5em;">
+            <mat-label>Unit (optional)</mat-label>
+            <mat-select [(ngModel)]="dialogParamForm.unitId">
+              <mat-option>
+                <ngx-mat-select-search [(ngModel)]="unitSearch" (ngModelChange)="filterUnits()"
+                  placeholderLabel="Search units..."></ngx-mat-select-search>
+              </mat-option>
+              <mat-option value="">— None —</mat-option>
+              @for (unit of filteredUnits; track unit._id) {
+              <mat-option [value]="unit._id">{{ unit.name }} ({{ unit.symbol }})</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Category Selector (multi-select) -->
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 150px; margin-bottom: -0.5em;">
+            <mat-label>Categories (optional)</mat-label>
+            <mat-select [(ngModel)]="dialogParamForm.categoryIds" multiple>
+              <mat-option>
+                <ngx-mat-select-search [(ngModel)]="catSearch" (ngModelChange)="filterCategories()"
+                  placeholderLabel="Search categories..."></ngx-mat-select-search>
+              </mat-option>
+              @for (cat of filteredCategories; track cat._id) {
+              <mat-option [value]="cat._id">{{ cat.name }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>Can choose multiple.</mat-hint>
+          </mat-form-field>
+
+          <!-- Header Info Selector -->
+          <mat-form-field appearance="outline" style="flex: 1; min-width: 150px; margin-bottom: -0.5em;">
+            <mat-label>Header Info (optional)</mat-label>
+            <mat-select [(ngModel)]="dialogParamForm.headerInfoId">
+              <mat-option>
+                <ngx-mat-select-search [(ngModel)]="headerSearch" (ngModelChange)="filterHeaderInfos()"
+                  placeholderLabel="Search headers..."></ngx-mat-select-search>
+              </mat-option>
+              <mat-option value="">— Global / None —</mat-option>
+              @for (info of filteredHeaderInfos; track info._id) {
+              <mat-option [value]="info._id">{{ info.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <!-- Formula Builder workspace -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
+          <span style="font-weight: 500; font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 6px;">
+            <mat-icon style="font-size: 18px; width: 18px; height: 18px; color: #6366f1;">functions</mat-icon>
+            Formula Workspace
+          </span>
+
+          <!-- Parameter Chips from spreadsheet selection -->
+          <div>
+            <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 550; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">Selected Parameter Cells (Click to Insert)</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              @for (key of getSelectedParamKeys(); track key) {
+              <button type="button" class="dialog-param-chip" (click)="insertKeyInDialogFormula(key, dialogFormulaInput)"
+                title="Click to insert {{ key }} in formula">
+                {{ getParameterName(key) }} (<code>{{ key }}</code>)
+              </button>
+              }
+            </div>
+          </div>
+
+          <!-- Operators -->
+          <div>
+            <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 550; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">Quick Operators</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <button type="button" class="dialog-operator-btn" (click)="insertOperatorInDialogFormula(' + ', dialogFormulaInput)">+</button>
+              <button type="button" class="dialog-operator-btn" (click)="insertOperatorInDialogFormula(' - ', dialogFormulaInput)">-</button>
+              <button type="button" class="dialog-operator-btn" (click)="insertOperatorInDialogFormula(' * ', dialogFormulaInput)">*</button>
+              <button type="button" class="dialog-operator-btn" (click)="insertOperatorInDialogFormula(' / ', dialogFormulaInput)">/</button>
+              <button type="button" class="dialog-operator-btn" (click)="insertOperatorInDialogFormula(' ^ ', dialogFormulaInput)">^</button>
+              <button type="button" class="dialog-operator-btn" (click)="insertOperatorInDialogFormula(' ( ', dialogFormulaInput)">(</button>
+              <button type="button" class="dialog-operator-btn" (click)="insertOperatorInDialogFormula(' ) ', dialogFormulaInput)">)</button>
+            </div>
+          </div>
+
+          <!-- Formula input field with validation icon -->
+          <mat-form-field appearance="outline" style="width: 100%; margin-bottom: -1em; margin-top: 4px;">
+            <mat-label>Formula Expression</mat-label>
+            <input matInput #dialogFormulaInput [(ngModel)]="dialogParamForm.formula" (ngModelChange)="onDialogFormulaChange($event)"
+              placeholder="e.g. quantity * rate" required autocomplete="off">
+            <mat-icon matSuffix [style.color]="dialogFormulaValid === true ? '#10b981' : (dialogFormulaValid === false ? '#ef4444' : '')">
+              {{ dialogFormulaValid === true ? 'check_circle' : (dialogFormulaValid === false ? 'error' : 'functions') }}
+            </mat-icon>
+            @if (dialogFormulaValid === false) {
+            <mat-error>{{ dialogFormulaError }}</mat-error>
+            }
+          </mat-form-field>
+
+          @if (dialogExtractedVars.length > 0) {
+          <div style="font-size: 0.78rem; color: #475569; margin-top: 4px;">
+            Extracted Variables: <strong>{{ dialogExtractedVars.join(', ') }}</strong>
+          </div>
+          }
+        </div>
+      </mat-dialog-content>
+
+      <mat-dialog-actions align="end" style="border-top: 1px solid #cbd5e1; padding-top: 16px; margin-top: 16px; gap: 8px;">
+        <button mat-button mat-dialog-close style="color: #64748b;">Cancel</button>
+        <button mat-flat-button color="primary" [disabled]="savingDialogParam || dialogFormulaValid === false || !dialogParamForm.name.trim() || !dialogParamForm.key.trim()" (click)="saveDialogParameter()">
+          {{ savingDialogParam ? 'Saving...' : 'Create & Assign' }}
+        </button>
+      </mat-dialog-actions>
+    </div>
+  </ng-template>
 </div>
